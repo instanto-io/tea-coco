@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--local-repository')
+parser.add_argument('--settings', type=Path, help='Maven settings for testing a published snapshot')
 args = parser.parse_args()
 project = Path(__file__).resolve().parents[1]
 namespace = 'http://maven.apache.org/POM/4.0.0'
@@ -41,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix='teavm-coverage-consumer-') as temporary
         if artifact in ['maven-surefire-plugin', 'maven-failsafe-plugin']:
             ET.SubElement(plugin, tag('version')).text = '3.5.4'
     pom.write(consumer / 'pom.xml', encoding='UTF-8', xml_declaration=True)
-    command = ['mvn', '-B', '-ntp', '-s', str(project / 'central-settings.xml')]
+    command = ['mvn', '-B', '-ntp', '-s', str((args.settings or project / 'central-settings.xml').resolve())]
     if args.local_repository:
         command += ['-Dmaven.repo.local=' + str(Path(args.local_repository).resolve())]
     subprocess.run(command + ['verify'], cwd=consumer, check=True)

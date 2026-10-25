@@ -1,4 +1,4 @@
-# TeaVM Browser Coverage
+# tea-coco
 
 Java source line coverage from real browser execution, using **unmodified TeaVM 0.16.0**.
 No compiler fork, patched JAR, Java agent, or replacement JUnit runner is needed.
@@ -11,8 +11,8 @@ The standalone source build uses only public Maven Central dependencies; it has 
 Requires JDK 21+, Maven 3.9+, and Google Chrome (`google-chrome-stable` on Linux).
 
 ```sh
-git clone https://github.com/instanto-io/teavm-coverage.git
-cd teavm-coverage
+git clone https://github.com/instanto-io/tea-coco.git
+cd tea-coco
 mvn -B -ntp -s central-settings.xml clean install
 python3 scripts/smoke_consumer.py
 ```
@@ -30,13 +30,13 @@ Outputs:
 
 ## Add to an existing Maven project
 
-After installing this project locally (or once a public package release is available), add this **test dependency**
+After installing locally or configuring the [internal snapshot repository](docs/internal-publishing.md), add this **test dependency**
 alongside your existing TeaVM JUnit/class-library dependencies. Keep TeaVM's own version at `0.16.0`.
 
 ```xml
 <dependency>
   <groupId>io.instanto</groupId>
-  <artifactId>teavm-coverage</artifactId>
+  <artifactId>tea-coco</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <scope>test</scope>
 </dependency>
@@ -60,7 +60,7 @@ Add the reporting goal:
 ```xml
 <plugin>
   <groupId>io.instanto</groupId>
-  <artifactId>teavm-coverage-maven-plugin</artifactId>
+  <artifactId>tea-coco-maven-plugin</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <executions>
     <execution>
@@ -79,9 +79,13 @@ A failed test still flushes its coverage before the stock runner reports the fai
 `verify` on test failure; the report goal may be invoked separately to inspect those diagnostics. It does not
 convert failing tests into passing tests. Missing/malformed browser evidence fails reporting.
 
-## Gradle and custom browser harnesses
+## Gradle plugin and custom browser harnesses
 
-The compiler extension is discovered through `META-INF/services/org.teavm.vm.spi.TeaVMPlugin`.
+Use the [Gradle plugin](docs/gradle.md), `io.instanto.tea-coco`, alongside TeaVM's library or application plugin.
+It configures the selected browser test task and provides `teaCocoReport`. The Gradle and Maven adapters share the
+same compiler extension and report format.
+
+For custom integration, the compiler extension is discovered through `META-INF/services/org.teavm.vm.spi.TeaVMPlugin`.
 It accepts the same three properties from the test JVM or TeaVM compiler properties. Your tests can keep using
 TeaVMTestRunner. After Gradle's test task, use `CoverageReporter.generate(...)` or the CLI:
 
@@ -89,7 +93,7 @@ TeaVMTestRunner. After Gradle's test task, use `CoverageReporter.generate(...)` 
 io.instanto.teavm.coverage.CoverageReporter DATA_DIRECTORY OUTPUT_XML SOURCE_ROOTS JUNIT_REPORT_DIRECTORY...
 ```
 
-Put `io.instanto:teavm-coverage` and its runtime dependencies on the reporting task's classpath.
+Put `io.instanto:tea-coco` and its runtime dependencies on the reporting task's classpath.
 The reporter does not require TeaVM compiler classes. A Gradle `JavaExec` reporting task should depend on
 `test` and read `build/test-results/test`. Source roots use the platform path separator as above.
 
@@ -132,11 +136,21 @@ The reporter rejects unknown build IDs, mismatched probe counts, missing sources
 The implementation uses TeaVM's public plugin SPI and public IR model. It replaces none of TeaVM's classes.
 The baseline/probe approach is inspired by GWT's compiler coverage design; it does not include copied GWT compiler code.
 
-## Public distribution
+## Integration and internal evaluation
 
-A source checkout can already be built and installed without a TeaVM fork or registry credentials.
-Package publication is a separate step. The current `packages.instanto.io` registry requires authentication,
-so it is not presented as an anonymous public installation route. Maven Central publication is pending configuration.
+* [Gradle plugin](docs/gradle.md): plugin DSL, internal resolution and task behavior.
+* [Consumer guide](docs/consumer-guide.md): what libraries/apps supply, a copyable opt-in Maven profile,
+  source metadata, separate test modules, browser harnesses, failure handling and Sonar imports.
+* [Internal publication](docs/internal-publishing.md): authenticated snapshots at `packages.instanto.io`,
+  CI credentials and verification from a fresh consumer cache.
+* [Repository rollout](docs/repository-rollout.md): staged evaluation against the existing Instanto test suites.
+
+The initial distribution is internal snapshots, to test tea-coco against our existing repositories before a public
+package release. The source remains public and builds from Maven Central without credentials or a TeaVM fork.
+The internal registry requires authentication. Maven Central publication is deferred.
+
+The Maven coordinates and repository are named tea-coco. The Java package `io.instanto.teavm.coverage`,
+`teavm.coverage.*` properties, `__TEAVM_COVERAGE_V1__` transport and existing output filenames remain stable.
 
 ## License
 

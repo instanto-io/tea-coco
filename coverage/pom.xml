@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.instanto</groupId>
-    <artifactId>teavm-coverage-parent</artifactId>
+    <artifactId>tea-coco-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>teavm-coverage</artifactId>
-  <name>TeaVM coverage compiler extension and reporter</name>
+  <artifactId>tea-coco</artifactId>
+  <name>tea-coco compiler extension and reporter</name>
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>

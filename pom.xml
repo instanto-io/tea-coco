@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.instanto</groupId>
-  <artifactId>teavm-coverage-parent</artifactId>
+  <artifactId>tea-coco-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>TeaVM Browser Coverage</name>
+  <name>tea-coco</name>
   <description>Optional Java line coverage for unmodified TeaVM releases</description>
-  <url>https://github.com/instanto-io/teavm-coverage</url>
+  <url>https://github.com/instanto-io/tea-coco</url>
   <developers>
     <developer>
       <name>Instanto contributors</name>
@@ -16,9 +16,9 @@
     </developer>
   </developers>
   <scm>
-    <url>https://github.com/instanto-io/teavm-coverage</url>
-    <connection>scm:git:https://github.com/instanto-io/teavm-coverage.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/instanto-io/teavm-coverage.git</developerConnection>
+    <url>https://github.com/instanto-io/tea-coco</url>
+    <connection>scm:git:https://github.com/instanto-io/tea-coco.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/instanto-io/tea-coco.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
   <licenses>
@@ -38,6 +38,14 @@
     <module>example</module>
   </modules>
   <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions><execution><id>sources</id><goals><goal>jar-no-fork</goal></goals></execution></executions>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
