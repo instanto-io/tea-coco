@@ -42,6 +42,8 @@ For Gradle plugin marker and dependency repositories, use the [Gradle guide](gra
 
 Pushes and manual runs on `main` verify Maven tests, real-browser behavior, the independent Maven consumer, Gradle
 plugin tests and independent Gradle consumers before deployment. Pull requests verify without publishing.
+Public verification runs on GitHub-hosted Linux. Deployment and registry consumer checks run on the
+`instanto-container` pool because the registry is reachable only on the private network.
 The checked-out, verified commit supplies the published snapshot artifacts; no publication-only path bypasses tests.
 
 Maven publishes the parent, core and Maven plugin. Gradle publishes its implementation and marker. Then fresh-cache

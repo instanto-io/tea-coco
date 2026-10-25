@@ -28,28 +28,45 @@ jobs:
         run: ./gradlew --no-daemon check publishToMavenLocal
       - name: Verify upstream TeaVM Gradle library and application consumers
         run: python3 scripts/smoke_gradle_consumer.py
+  publish-snapshot:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # packages.instanto.io is private-network infrastructure, reachable by this pool.
+    runs-on: [self-hosted, instanto-container]
+    timeout-minutes: 45
+    env:
+      FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
+      FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGE_TOKEN || secrets.FORGEJO_PACKAGES_TOKEN }}
+      GRADLE_USER_HOME: ${{ runner.temp }}/tea-coco-gradle-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          overwrite-settings: false
       - name: Publish verified snapshots to Instanto
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        env:
-          FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
-          FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGE_TOKEN || secrets.FORGEJO_PACKAGES_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "$FORGEJO_PACKAGE_USER" ] || [ -z "$FORGEJO_PACKAGE_TOKEN" ]; then
             echo '::error::Grant instanto-io/tea-coco access to the organisation Forgejo package user and write-token secrets.'
             exit 1
           fi
-          # The complete reactor and both consumers were verified above at this commit.
-          # The example is not a published library and its coverage report needs real tests.
-          mvn -B -ntp -s .github/maven-settings.xml -pl coverage,maven-plugin -am deploy -DskipTests
+          # Both adapters and consumers were verified at this workflow's checkout.
+          # Keep deployments out of the shared runner's persistent Maven cache.
+          mvn -B -ntp -s .github/maven-settings.xml \
+            -Dmaven.repo.local="$RUNNER_TEMP/tea-coco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
+            -pl coverage,maven-plugin -am clean deploy -DskipTests
           ./gradlew --no-daemon publish
       - name: Verify published Maven and Gradle snapshots from fresh caches
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        env:
-          FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
-          FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGE_TOKEN || secrets.FORGEJO_PACKAGES_TOKEN }}
         run: |
           set -euo pipefail
           python3 scripts/smoke_consumer.py --settings .github/maven-settings.xml \
             --local-repository "$RUNNER_TEMP/tea-coco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
           python3 scripts/smoke_gradle_consumer.py --published
+      - name: Clean job-local package caches
+        if: always()
+        run: |
+          rm -rf -- "$GRADLE_USER_HOME" \
+            "$RUNNER_TEMP/tea-coco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
+            "$RUNNER_TEMP/tea-coco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
