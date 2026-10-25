@@ -143,6 +143,7 @@ The baseline/probe approach is inspired by GWT's compiler coverage design; it do
   source metadata, separate test modules, browser harnesses, failure handling and Sonar imports.
 * [Internal publication](docs/internal-publishing.md): authenticated snapshots at `packages.instanto.io`,
   CI credentials and verification from a fresh consumer cache.
+* [Branch coverage design](docs/branch-coverage-design.md): measured JaCoCo semantics, compiler identities and Sonar merging constraints.
 * [Repository rollout](docs/repository-rollout.md): staged evaluation against the existing Instanto test suites.
 
 The initial distribution is internal snapshots, to test tea-coco against our existing repositories before a public

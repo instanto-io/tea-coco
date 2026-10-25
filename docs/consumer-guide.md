@@ -144,6 +144,9 @@ For a Maven module, import `target/teavm-coverage.xml` with `sonar.coverageRepor
 For Gradle, use `build/reports/tea-coco/coverage.xml`. Ensure the scanner analyzes the same source checkout and can
 resolve the absolute source paths. If you also use JaCoCo, keep its XML in `sonar.coverage.jacoco.xmlReportPaths`;
 do not put tea-coco's generic XML there. Validate scanner imports before changing coverage gates or combining metrics.
+The current tea-coco version adds line hits only. For overlapping reports, Sonar ORs line hits but uses maximum
+branch counts; this is not an exact union of complementary branch executions. See the
+[branch coverage analysis](branch-coverage-design.md#sonar-thresholds-and-the-limits-of-merging-xml).
 
 `not-emitted.json` is separate diagnostic data. Code removed by compilation is not marked as a zero-hit compiled
 line. Classes never reached by dependency analysis are not inventoried. Sonar may still count other analyzed sources

@@ -22,6 +22,8 @@ jobs:
           cache: maven
       - name: Verify Maven artifacts against upstream TeaVM and real Chrome
         run: mvn -B -ntp -s central-settings.xml clean install
+      - name: Verify the JaCoCo branch reference contract
+        run: python3 scripts/check_jacoco_branch_reference.py
       - name: Verify an unrelated Maven consumer
         run: python3 scripts/smoke_consumer.py
       - name: Verify Gradle plugin and install plugin markers locally
