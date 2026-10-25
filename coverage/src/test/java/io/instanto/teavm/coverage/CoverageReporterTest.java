@@ -82,9 +82,13 @@ public class CoverageReporterTest {
   }
 
   @Test
-  public void refusesMissingBrowserEvidence() {
+  public void refusesMissingBrowserEvidence() throws IOException {
+    Files.createDirectories(output.getParent());
+    Files.writeString(output, "stale successful report");
+    Files.writeString(output.resolveSibling("not-emitted.json"), "{}");
     assertThrows(IOException.class, this::generate);
     assertFalse(Files.exists(output));
+    assertFalse(Files.exists(output.resolveSibling("not-emitted.json")));
   }
 
   @Test

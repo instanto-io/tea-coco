@@ -59,6 +59,9 @@ public final class CoverageReporter {
   }
 
   public void generate(Path data, List<Path> junitReports, Path output) throws IOException {
+    // A failed report attempt must not leave a previous run's green report available to a scanner.
+    Files.deleteIfExists(output);
+    Files.deleteIfExists(output.resolveSibling("not-emitted.json"));
     inventories.clear();
     coverage.clear();
     excluded.clear();
