@@ -1,37 +1,33 @@
-# tea-coco
+# Tea-Coco
 
-Java source line coverage from real browser execution, using **unmodified TeaVM 0.16.0**.
-No compiler fork, patched JAR, Java agent, or replacement JUnit runner is needed.
+Tea-Coco measures Java source coverage from tests running in the browser. It adds
+coverage probes when TeaVM compiles Java to JavaScript, collects their results,
+and produces a Sonar generic coverage report.
 
-This is an experimental extension. It is not yet published to Maven Central.
-The standalone source build uses only public Maven Central dependencies; it has no private organisation parent POM.
+**Alpha — `0.1.0-SNAPSHOT`.** The extension targets **TeaVM 0.16.0** and is intended
+for evaluation in coverage test builds. It works with the stock TeaVM compiler
+and `TeaVMTestRunner`. Maven Central publication is planned; the current snapshot
+can be installed from source.
 
-## Try it
+## What is implemented
 
-Requires JDK 21+, Maven 3.9+, and Google Chrome (`google-chrome-stable` on Linux).
+- Java source line coverage from actual browser execution.
+- Opt-in instrumentation restricted to the source roots you select.
+- Collection through the existing TeaVM JUnit runner, including failed tests.
+- Merging of browser results across test compilations and JVM forks.
+- Sonar generic coverage XML and a separate diagnostic report for source
+  locations that were examined but not emitted into JavaScript.
+- A Maven report goal, a Gradle plugin and a reporter for custom test harnesses.
 
-```sh
-git clone https://github.com/instanto-io/tea-coco.git
-cd tea-coco
-mvn -B -ntp -s central-settings.xml clean install
-python3 scripts/smoke_consumer.py
-```
+The examples verify ordinary, minified and optimized JavaScript builds in Chrome.
+The instrumentation uses compiler metadata and does not depend on source maps or
+Chrome DevTools coverage APIs.
 
-The example uses the ordinary `@RunWith(TeaVMTestRunner.class)` annotation. It executes real Chrome tests
-in ordinary, minified and optimised configurations, then checks the coverage report against deliberately
-covered, unexecuted, short-circuited and omitted application code. Firefox can be selected with
-`-Dcoverage.browser=browser-firefox` when installed.
+## Add coverage to Maven tests
 
-Outputs:
-
-* `example/target/teavm-coverage.xml`: Sonar generic coverage XML.
-* `example/target/not-emitted.json`: source lines examined but absent from all compiled test configurations.
-* `example/target/teavm-coverage/*.json`: per-compilation probe baselines.
-
-## Add to an existing Maven project
-
-After installing locally or configuring the [internal snapshot repository](docs/internal-publishing.md), add this **test dependency**
-alongside your existing TeaVM JUnit/class-library dependencies. Keep TeaVM's own version at `0.16.0`.
+Start with a project whose TeaVM browser tests already run successfully. Keep its
+existing TeaVM JUnit dependencies, browser selection and runner configuration.
+Add Tea-Coco as a test dependency:
 
 ```xml
 <dependency>
@@ -42,8 +38,7 @@ alongside your existing TeaVM JUnit/class-library dependencies. Keep TeaVM's own
 </dependency>
 ```
 
-Add the following to your existing Surefire `systemPropertyVariables`. Coverage is disabled unless explicitly enabled.
-The source roots select your application sources, avoiding coverage of TeaVM/JUnit/dependencies.
+Enable coverage in the existing Surefire `systemPropertyVariables`:
 
 ```xml
 <teavm.coverage.enabled>true</teavm.coverage.enabled>
@@ -51,11 +46,19 @@ The source roots select your application sources, avoiding coverage of TeaVM/JUn
 <teavm.coverage.dataDirectory>${project.build.directory}/teavm-coverage</teavm.coverage.dataDirectory>
 ```
 
-Multiple roots are separated by the platform path separator (`:` on Unix; `;` on Windows).
-Keep the usual `teavm.junit.target`, JS runner and backend settings. Do not remove JUnit's captured stdout.
-Do not enable incremental AST caching for a coverage build.
+Coverage is disabled unless explicitly enabled. Source roots identify the
+application or library code to measure. Separate multiple roots with the
+platform path separator: `:` on Unix or `;` on Windows. Each module should use
+its own data directory.
 
-Add the reporting goal:
+Keep JUnit's captured stdout, which carries browser results. Coverage builds
+must use non-incremental TeaVM compilation. The
+[consumer guide](docs/consumer-guide.md) includes a complete opt-in Maven profile
+and examples for tests in a separate module.
+
+## Generate a report
+
+Add the reporting plugin to the project's build:
 
 ```xml
 <plugin>
@@ -70,89 +73,107 @@ Add the reporting goal:
 </plugin>
 ```
 
-Run `mvn clean verify`. Set `sonar.coverageReportPaths=target/teavm-coverage.xml` when analysing that module.
-The plugin defaults to Maven's compile source roots and reads both Surefire and Failsafe XML. Override its
-`sourceRoots`, `dataDirectory`, `surefireReports`, `failsafeReports` or `outputFile` if needed.
-Each reactor module should own its data and report directories.
+Run `mvn clean verify`. The report goal runs in the `verify` phase and reads both
+Surefire and Failsafe XML. Its defaults use the module's compile source roots and
+produce these files:
 
-A failed test still flushes its coverage before the stock runner reports the failure. Maven normally stops before
-`verify` on test failure; the report goal may be invoked separately to inspect those diagnostics. It does not
-convert failing tests into passing tests. Missing/malformed browser evidence fails reporting.
+| Output | Contents |
+| --- | --- |
+| `target/teavm-coverage.xml` | Sonar generic coverage report |
+| `target/not-emitted.json` | Examined source locations with no emitted probe |
+| `target/teavm-coverage/*.json` | Per-compilation probe baselines |
 
-## Gradle plugin and custom browser harnesses
+Set `sonar.coverageReportPaths=target/teavm-coverage.xml` when analysing the module.
+The plugin does not change Sonar exclusions or quality gates. Its `sourceRoots`,
+`dataDirectory`, `surefireReports`, `failsafeReports` and `outputFile` settings
+allow different layouts; keep the compiler and reporter source roots aligned.
 
-Use the [Gradle plugin](docs/gradle.md), `io.instanto.tea-coco`, alongside TeaVM's library or application plugin.
-It configures the selected browser test task and provides `teaCocoReport`. The Gradle and Maven adapters share the
-same compiler extension and report format.
+A failed browser test still flushes coverage before the runner reports failure.
+Maven may stop before `verify`; invoke the plugin’s `report` goal separately
+when inspecting such a run. Reporting preserves the test outcome and rejects
+missing or malformed browser evidence.
 
-For custom integration, the compiler extension is discovered through `META-INF/services/org.teavm.vm.spi.TeaVMPlugin`.
-It accepts the same three properties from the test JVM or TeaVM compiler properties. Your tests can keep using
-TeaVMTestRunner. After Gradle's test task, use `CoverageReporter.generate(...)` or the CLI:
+## Read the coverage results
 
-```text
-io.instanto.teavm.coverage.CoverageReporter DATA_DIRECTORY OUTPUT_XML SOURCE_ROOTS JUNIT_REPORT_DIRECTORY...
+A source line is **covered** when at least one probe on that line was hit. It is
+**uncovered** when the compiled build contains a probe for it but no collected
+test hit that probe.
+
+**Not emitted** means a source location was examined during compilation but had
+no probe in any compiled test configuration. This includes optimization effects;
+it does not necessarily mean the source is unused. These locations are recorded
+in the diagnostic JSON rather than as zero-hit entries in the Sonar report.
+Classes never reached by dependency analysis are outside the inventory.
+
+Line coverage does not show whether every path through a condition was taken.
+Branch coverage is being developed separately; see the
+[branch coverage design](docs/branch-coverage-design.md).
+
+Probes are inserted after TeaVM's intermediate-code optimization. They do not
+make unreachable application methods reachable. Results from the same line are
+merged across compiled tests. Start with a clean build to avoid mixing evidence
+from separate invocations; the reporter checks compilation identities, probe
+counts and source paths.
+
+## Use with Gradle
+
+The `io.instanto.tea-coco` plugin works alongside TeaVM's library or application
+plugin. It instruments an existing JUnit `Test` task and provides `teaCocoReport`:
+
+```kotlin
+plugins {
+    id("io.instanto.tea-coco") version "0.1.0-SNAPSHOT"
+}
+
+teaCoco {
+    enabled.set(true)
+    testTask.set("test")
+    sourceRoots.setFrom(layout.projectDirectory.dir("src/main/java"))
+}
 ```
 
-Put `io.instanto:tea-coco` and its runtime dependencies on the reporting task's classpath.
-The reporter does not require TeaVM compiler classes. A Gradle `JavaExec` reporting task should depend on
-`test` and read `build/test-results/test`. Source roots use the platform path separator as above.
+This is added to a build with TeaVM and snapshot plugin resolution already
+configured. Run `./gradlew teaCocoReport` to execute the selected tests and write
+`build/reports/tea-coco/coverage.xml`. The selected test task also finalizes with
+reporting when run directly. See the [Gradle guide](docs/gradle.md) for complete
+configuration, task behavior and current limitations.
 
-For a custom application harness, enable the compiler extension and collect
-`JSON.stringify(globalThis.__teavmCoverageV1)` after the awaited application/test work. Print it from the JVM
-JUnit test with the prefix `__TEAVM_COVERAGE_V1__:` so the same reporter can consume it. Alternatively Java
-browser code may explicitly call `CoverageRuntime.flush()`. Preserve the baselines from the matching compilation.
-This adapter is tested with stock TeaVMTestRunner; other harnesses must verify their completion and failure paths.
+## Custom browser harnesses
 
-## What the numbers mean
+The compiler extension is discovered through TeaVM's plugin service. Custom
+harnesses use the same coverage properties, keep the baselines from that
+compilation and collect `globalThis.__teavmCoverageV1` after test work completes.
+The reporter can then generate the same XML from the collected results.
 
-The plugin inventories source locations during dependency analysis and inserts probes through the public renderer
-listener immediately before JavaScript generation, **after TeaVM's IR optimisation**. It does not make previously
-unreachable application methods reachable. The probe runtime itself is explicitly linked as tooling.
+The [consumer guide](docs/consumer-guide.md#applications-with-playwright-or-another-browser-harness)
+describes the transport format, `CoverageRuntime.flush()`, reporter entry points
+and failure handling. These details matter when using Playwright or an
+application harness instead of `TeaVMTestRunner`.
 
-* **Covered:** an included source line had at least one probe hit.
-* **Uncovered:** the compiled build includes a probe for that line, but no collected test hit it.
-* **Not emitted:** a source location in an examined class had no probe in any of the compiled configurations.
+## Build and limitations
 
-Not-emitted is diagnostic information, not a zero-hit entry in the Sonar XML. It includes optimisation effects,
-so it is not always evidence of an unused API. Classes never reached by dependency analysis are outside this inventory.
-A line shared by several instructions is covered when any of them runs; this is not branch coverage.
-The metadata is captured directly from the compiler, so source maps/debugger metadata are optional.
+Use JDK 21+, Maven 3.9+ and Chrome for the example tests:
 
-Immutable compilation IDs prevent collisions between concurrent JVM forks. Browser snapshots retain class-init
-hits and merge by OR across repeated/cached tests. Start with `clean` to avoid mixing different invocations.
-The reporter rejects unknown build IDs, mismatched probe counts, missing sources and ambiguous source roots.
+```sh
+mvn -B -ntp -s central-settings.xml clean install
+python3 scripts/smoke_consumer.py
+```
 
-## Current limits
+The source build uses public Maven dependencies and stock TeaVM 0.16.0. The
+example outputs are under `example/target/`. The Gradle adapter has its own
+build; see the [Gradle build instructions](docs/gradle.md#build-locally).
 
-* Supported/tested compiler and stock runner: upstream TeaVM **0.16.0**, JavaScript backend, non-incremental builds.
-* Initial browser validation: Chrome. No dependency on Chrome DevTools coverage APIs.
-* WebAssembly, C and branch coverage are not implemented.
-* Native JS bodies, generated intrinsic internals and code without source lines are outside Java line coverage.
-* Instrumentation adds overhead and is intended for coverage test builds, not production bundles.
-* The stock runner adapter targets its 0.16.0 entry point; later TeaVM versions need compatibility tests.
-* Sonar's analysis of sources outside the imported report depends on scanner configuration. The diagnostics do not
-  automatically change exclusions or quality gates.
+Validation currently covers the JavaScript backend, non-incremental compilation
+and Chrome. Later TeaVM versions need compatibility testing. WebAssembly and C
+are outside the supported scope. Native JavaScript bodies, generated intrinsic
+internals and code without source locations are outside Java line coverage.
+Instrumentation adds overhead and should be enabled for coverage testing only.
 
-The implementation uses TeaVM's public plugin SPI and public IR model. It replaces none of TeaVM's classes.
-The baseline/probe approach is inspired by GWT's compiler coverage design; it does not include copied GWT compiler code.
+## Source and license
 
-## Integration and internal evaluation
-
-* [Gradle plugin](docs/gradle.md): plugin DSL, internal resolution and task behavior.
-* [Consumer guide](docs/consumer-guide.md): what libraries/apps supply, a copyable opt-in Maven profile,
-  source metadata, separate test modules, browser harnesses, failure handling and Sonar imports.
-* [Internal publication](docs/internal-publishing.md): authenticated snapshots at `packages.instanto.io`,
-  CI credentials and verification from a fresh consumer cache.
-* [Branch coverage design](docs/branch-coverage-design.md): measured JaCoCo semantics, compiler identities and Sonar merging constraints.
-* [Repository rollout](docs/repository-rollout.md): staged evaluation against the existing Instanto test suites.
-
-The initial distribution is internal snapshots, to test tea-coco against our existing repositories before a public
-package release. The source remains public and builds from Maven Central without credentials or a TeaVM fork.
-The internal registry requires authentication. Maven Central publication is deferred.
-
-The Maven coordinates and repository are named tea-coco. The Java package `io.instanto.teavm.coverage`,
-`teavm.coverage.*` properties, `__TEAVM_COVERAGE_V1__` transport and existing output filenames remain stable.
-
-## License
+The implementation uses TeaVM's public plugin SPI and intermediate-code model.
+The probe approach is informed by GWT's compiler coverage design; no GWT compiler
+code is included. The Java package is `io.instanto.teavm.coverage`; configuration
+properties use the `teavm.coverage.*` prefix.
 
 Apache License 2.0; see [LICENSE](LICENSE).
