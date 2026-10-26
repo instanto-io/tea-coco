@@ -1,0 +1,35 @@
+name: Verify Mockatcha and Tea-Coco together
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: [self-hosted, instanto-container]
+    timeout-minutes: 20
+    env:
+      FORGEJO_PACKAGE_USER: ${{ secrets.FORGEJO_PACKAGE_USER }}
+      FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGE_TOKEN || secrets.FORGEJO_PACKAGES_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          overwrite-settings: false
+      - name: Allocate isolated Maven cache
+        run: echo "DEMO_MAVEN_CACHE=$RUNNER_TEMP/mockatcha-demo-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+      - name: Verify snapshots with JVM and browser tests
+        run: |
+          mvn -B -ntp -U -s settings.xml -Dmaven.repo.local="$DEMO_MAVEN_CACHE" clean verify
+          python3 verify_coverage.py >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish coverage diagnostics
+        if: always()
+        run: |
+          python3 .github/scripts/publish_report.py --name timesheet-coverage \
+            --path target/site --path target/surefire-reports --path target/failsafe-reports \
+            --path target/teavm-coverage.xml --path target/teavm-coverage.xml.exec \
+            --path target/browser-coverage.xml --path target/compiler-evidence.json \
+            --path target/coverage-comparison.md
+      - name: Clean isolated Maven cache
+        if: always()
+        run: rm -rf -- "$DEMO_MAVEN_CACHE"

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+  <servers>
+    <server><id>forgejo-instanto</id><username>${env.FORGEJO_PACKAGE_USER}</username><password>${env.FORGEJO_PACKAGE_TOKEN}</password></server>
+  </servers>
+  <!-- A parent cannot supply the repository Maven needs to find that parent. -->
+  <profiles>
+    <profile>
+      <id>instanto-snapshots</id>
+      <repositories>
+        <repository>
+          <id>forgejo-instanto</id>
+          <url>https://packages.instanto.io/api/packages/instanto-io/maven</url>
+          <releases><enabled>false</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>forgejo-instanto</id>
+          <url>https://packages.instanto.io/api/packages/instanto-io/maven</url>
+          <releases><enabled>false</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+  <activeProfiles><activeProfile>instanto-snapshots</activeProfile></activeProfiles>
+</settings>

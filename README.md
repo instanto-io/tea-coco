@@ -39,6 +39,11 @@ with zero coverage from the JVM-only measurement of those browser tests. Both
 reports retain the same original-bytecode denominator. A [live Sonar import](docs/sonar-import-pilot.md)
 also matched the fixture's exact line/branch counts and combined percentage.
 
+The [Mockatcha timesheet example](mockatcha-example/README.md) combines core mocks,
+BDD spies and stock TeaVMTestRunner with complementary JVM/browser tests. Its
+checked reports demonstrate **1/6 JVM + 5/6 browser → 6/6 merged branch outcomes**,
+with unchanged application JARs. It is also available as a standalone repository.
+
 The remaining introductory examples describe the backward-compatible default
 `lines` mode, which reports only the source locations present in compiled tests.
 
