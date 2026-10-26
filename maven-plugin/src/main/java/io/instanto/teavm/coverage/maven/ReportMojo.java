@@ -12,6 +12,7 @@
 package io.instanto.teavm.coverage.maven;
 
 import io.instanto.teavm.coverage.CoverageReporter;
+import io.instanto.teavm.coverage.JacocoReporter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -22,7 +23,10 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
-/** Converts compiler data and standard Surefire/Failsafe output to Sonar generic coverage XML. */
+/**
+ * Converts compiler data and standard Surefire/Failsafe output to line-only generic or JaCoCo
+ * coverage XML.
+ */
 @Mojo(name = "report", defaultPhase = LifecyclePhase.VERIFY, threadSafe = true)
 public final class ReportMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.build.directory}/teavm-coverage", required = true)
@@ -40,9 +44,29 @@ public final class ReportMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.compileSourceRoots}", required = true)
   private List<String> sourceRoots;
 
+  @Parameter(property = "tea-coco.mode", defaultValue = "lines")
+  private String mode;
+
+  @Parameter private List<File> executionData;
+
   @Override
   public void execute() throws MojoExecutionException {
     try {
+      if ("jacoco".equals(mode)) {
+        new JacocoReporter()
+            .generate(
+                dataDirectory.toPath(),
+                List.of(surefireReports.toPath(), failsafeReports.toPath()),
+                outputFile.toPath(),
+                sourceRoots.stream().map(Path::of).toList(),
+                executionData == null
+                    ? List.of()
+                    : executionData.stream().map(File::toPath).toList());
+        getLog().info("TeaVM JaCoCo coverage: " + outputFile);
+        return;
+      }
+      if (!"lines".equals(mode))
+        throw new IllegalArgumentException("Unknown tea-coco mode: " + mode);
       new CoverageReporter(sourceRoots.stream().map(Path::of).toList())
           .generate(
               dataDirectory.toPath(),

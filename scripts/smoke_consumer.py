@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--local-repository')
+parser.add_argument('--jacoco', action='store_true', help='Exercise original-bytecode branch coverage')
 parser.add_argument('--settings', type=Path, help='Maven settings for testing a published snapshot')
 args = parser.parse_args()
 project = Path(__file__).resolve().parents[1]
@@ -19,8 +20,9 @@ def tag(name):
 
 with tempfile.TemporaryDirectory(prefix='teavm-coverage-consumer-') as temporary:
     consumer = Path(temporary)
-    shutil.copytree(project / 'example/src', consumer / 'src')
-    pom = ET.parse(project / 'example/pom.xml')
+    example = project / ('jacoco-example' if args.jacoco else 'example')
+    shutil.copytree(example / 'src', consumer / 'src')
+    pom = ET.parse(example / 'pom.xml')
     root = pom.getroot()
     root.remove(root.find(tag('parent')))
     ET.SubElement(root, tag('groupId')).text = 'example.independent'
@@ -32,7 +34,10 @@ with tempfile.TemporaryDirectory(prefix='teavm-coverage-consumer-') as temporary
     for version in root.iter(tag('version')):
         if version.text == '${project.version}':
             version.text = '${coverage.version}'
-    plugins = root.find(tag('build')).find(tag('plugins'))
+    build = root.find(tag('build'))
+    if args.jacoco:
+        ET.SubElement(build, tag('finalName')).text = 'tea-coco-jacoco-example-0.1.0-SNAPSHOT'
+    plugins = build.find(tag('plugins'))
     compiler = ET.SubElement(plugins, tag('plugin'))
     ET.SubElement(compiler, tag('groupId')).text = 'org.apache.maven.plugins'
     ET.SubElement(compiler, tag('artifactId')).text = 'maven-compiler-plugin'
@@ -47,10 +52,28 @@ with tempfile.TemporaryDirectory(prefix='teavm-coverage-consumer-') as temporary
         command += ['-Dmaven.repo.local=' + str(Path(args.local_repository).resolve())]
     subprocess.run(command + ['verify'], cwd=consumer, check=True)
     report = ET.parse(consumer / 'target/teavm-coverage.xml').getroot()
-    assert report.tag == 'coverage'
-    assert report.find('file') is not None
+    if args.jacoco:
+        assert report.tag == 'report'
+        assert report.find(".//method[@name='choose']/counter[@type='BRANCH']").get('covered') == '2'
+        assert report.find(".//method[@name='neverCalled']/counter[@type='BRANCH']").get('missed') == '2'
+        # This mirrors deactivating an opt-in coverage profile.
+        for plugin in list(plugins):
+            if plugin.find(tag('artifactId')).text == 'tea-coco-maven-plugin':
+                plugins.remove(plugin)
+            configuration = plugin.find(tag('configuration'))
+            if configuration is not None:
+                overlay = configuration.find(tag('classesDirectory'))
+                if overlay is not None:
+                    configuration.remove(overlay)
+        for prop in root.iter(tag('teavm.coverage.enabled')):
+            prop.text = 'false'
+        pom.write(consumer / 'pom.xml', encoding='UTF-8', xml_declaration=True)
+    else:
+        assert report.tag == 'coverage'
+        assert report.find('file') is not None
     subprocess.run(command + ['clean', 'test', '-Dcoverage.enabled=false'], cwd=consumer, check=True)
     assert not (consumer / 'target/teavm-coverage').exists()
     for script in (consumer / 'target/teavm-tests').rglob('*.js'):
         assert '__teavmCoverageV1' not in script.read_text(), script
+        assert '__TEA_COCO_JACOCO_V1__' not in script.read_text(), script
     print('Independent consumer verified, including disabled mode: no parent, fork, patched JAR or reactor dependency.')

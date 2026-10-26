@@ -6,7 +6,7 @@
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>tea-coco</name>
-  <description>Optional Java line coverage for unmodified TeaVM releases</description>
+  <description>Optional Java line and branch coverage for unmodified TeaVM releases</description>
   <url>https://github.com/instanto-io/tea-coco</url>
   <developers>
     <developer>
@@ -36,6 +36,7 @@
     <module>coverage</module>
     <module>maven-plugin</module>
     <module>example</module>
+    <module>jacoco-example</module>
   </modules>
   <build>
     <plugins>
