@@ -167,7 +167,8 @@ importing separate JVM/browser XML counts. Matching raw probe hits are ORed befo
 JaCoCo calculates line and branch counters. The standard XML feeds Sonar's normal
 coverage calculation; Tea-Coco does not change gates, exclusions or thresholds.
 The manual `sonar-pilot.yml` workflow checks the server's actual imported counters
-and coverage calculation in a dedicated fixture project.
+and coverage calculation in a dedicated fixture project. See the [live result](sonar-import-pilot.md)
+and the separate read-token requirement for automated readback.
 
 The full original-bytecode denominator is retained. Never-called methods and
 classes remain missed. JaCoCo's filters and C1 branch definition apply (including

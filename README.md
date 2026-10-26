@@ -36,7 +36,8 @@ JVM `.exec` merging, failure handling and compiler-diagnostic limits.
 The first real [GWT compatibility pilot](docs/gwt-user-compat-pilot.md) passed all
 67 browser tests and covered **1,764/6,344 lines and 499/2,230 branches**, compared
 with zero coverage from the JVM-only measurement of those browser tests. Both
-reports retain the same original-bytecode denominator.
+reports retain the same original-bytecode denominator. A [live Sonar import](docs/sonar-import-pilot.md)
+also matched the fixture's exact line/branch counts and combined percentage.
 
 The remaining introductory examples describe the backward-compatible default
 `lines` mode, which reports only the source locations present in compiled tests.

@@ -67,7 +67,7 @@ fall-through, colliding-string-switch and exception cases use the existing refer
 
 Outputs under `research/jacoco-teavm-prototype/target/proof/` include ordinary JaCoCo `.exec` and XML files. Therefore
 Sonar can import a merged report through its existing JaCoCo importer; no new Sonar format is needed for this approach.
-A live Sonar import/gate calculation has not yet been performed for this prototype.
+The integrated fixture now has a [live Sonar import verification](sonar-import-pilot.md): exact overall counters and the combined calculation match; a new-code baseline test remains separate.
 
 ### Compiler evidence and the execution denominator
 
@@ -214,7 +214,7 @@ maximum counts are not even evidence of a meaningful common branch denominator.
 This behavior was checked in the public scanner storage source and in the locally cached
 `sonar-scanner-engine-community-13.4.1.4007.jar` using `javap -p -c`: coverage-storage lambdas use boolean OR and
 `Math.max`. Its cache content hash is `826dd133d6bf6e9c71c1bf81aed2dcf7743862912a8ac7af2c4e9a60fda16107`.
-The server reported version `26.8.0.126808`. This is implementation inspection, **not yet a live end-to-end import test**.
+The server reported version `26.8.0.126808`. This paragraph records implementation inspection; the later [live import check](sonar-import-pilot.md) verifies the integrated standard JaCoCo XML counters and overall calculation.
 
 JaCoCo XML and Sonar generic XML contain counts per source line, not the identity of each covered outcome. An exact
 JVM/browser branch union cannot be reconstructed from these XML files alone. We need raw JVM probe evidence,
