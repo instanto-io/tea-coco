@@ -1,4 +1,4 @@
-# Evaluating tea-coco across Instanto repositories
+# Evaluating TeaCoCo across Instanto repositories
 
 Start with opt-in coverage jobs alongside existing tests. Keep the ordinary builds and existing Sonar gates intact
 until the imports and source scope are understood. An isolated Maven/Gradle fixture passing is necessary, but does
@@ -13,12 +13,12 @@ not establish compatibility with every repository's generators, compiler extensi
 | sarto-scene and its geo showcase: library and application tests | Choose stock-runner or application-harness path per suite; give each compilation/test job its own data. | Animation/skin/model mutation tests, omitted methods, and application initialization coverage. |
 | Ports: consumer application tests | Integrate after the consumer itself builds; select matching sources for the libraries under test. | Distinguish pre-existing compilation/platform failures from coverage integration defects. |
 
-These are rollout targets, **not a claim that all those suites have already passed with tea-coco**.
+These are rollout targets, **not a claim that all those suites have already passed with TeaCoCo**.
 The standalone Maven example and Gradle independent consumers are the initial executable compatibility proofs.
 
 ## Procedure for each repository
 
-1. Record the repository SHA, TeaVM/compiler/plugin versions, browser versions and resolved tea-coco snapshot.
+1. Record the repository SHA, TeaVM/compiler/plugin versions, browser versions and resolved TeaCoCo snapshot.
 2. Run the existing suite without coverage and keep its result. Resolve unrelated build/publication blockers first.
 3. Enable coverage only for that suite, using a clean isolated output directory and the same assertions/browser.
 4. Select matching Java source roots, including generated sources when relevant. Avoid ambiguous duplicate paths.

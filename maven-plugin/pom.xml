@@ -8,7 +8,7 @@
   </parent>
   <artifactId>tea-coco-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <name>tea-coco Maven reporting</name>
+  <name>TeaCoCo Maven reporting</name>
   <dependencies>
     <dependency><groupId>org.apache.maven</groupId><artifactId>maven-core</artifactId><version>3.9.9</version><scope>provided</scope></dependency>
     <dependency>

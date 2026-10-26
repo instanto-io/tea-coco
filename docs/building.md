@@ -1,6 +1,6 @@
 # Build and install the alpha
 
-Tea-Coco is an alpha project. Maven Central publication is planned; the current
+TeaCoCo is an alpha project. Maven Central publication is planned; the current
 `0.1.0-SNAPSHOT` can be built and installed from source.
 
 Source repository: [instanto-io/tea-coco](https://github.com/instanto-io/tea-coco).

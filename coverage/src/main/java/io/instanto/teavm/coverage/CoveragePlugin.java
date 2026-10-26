@@ -73,7 +73,7 @@ public final class CoveragePlugin implements TeaVMPlugin {
       new JacocoCompilerPlugin().install(host);
       return;
     }
-    if (!mode.equals("lines")) throw new IllegalArgumentException("Unknown tea-coco mode: " + mode);
+    if (!mode.equals("lines")) throw new IllegalArgumentException("Unknown TeaCoCo mode: " + mode);
     var javascript = host.getExtension(TeaVMJavaScriptHost.class);
     if (javascript == null) {
       return;

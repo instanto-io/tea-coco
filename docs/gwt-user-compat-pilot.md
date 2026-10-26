@@ -45,7 +45,7 @@ Machine-readable counts are in [the result record](gwt-user-compat-pilot-results
 
 ## Reproduce
 
-Install this tea-coco revision with `mvn clean install` first. Export the pinned
+Install this TeaCoCo revision with `mvn clean install` first. Export the pinned
 teavm-compat revision to a new directory (do not reuse a working checkout):
 
 ```sh
@@ -81,5 +81,5 @@ do not run the coverage report for that plain pass. Delete only
 `gwt-user-compat-tests/target/teavm-tests` before each timing run.
 
 The pilot report has not been substituted for teavm-compat's live Sonar report.
-A dedicated tea-coco Sonar workflow checks the standard import separately;
+A dedicated TeaCoCo Sonar workflow checks the standard import separately;
 existing repository gates stay unchanged.

@@ -1,10 +1,10 @@
-# Using tea-coco in a library or application
+# Using TeaCoCo in a library or application
 
 This guide describes the default `lines` mode. For original-bytecode line/branch
 coverage and exact JVM/browser merging, use the [JaCoCo mode guide](jacoco-mode.md).
 
 
-tea-coco measures Java lines executed **in the browser** after TeaVM compiles them to JavaScript.
+TeaCoCo measures Java lines executed **in the browser** after TeaVM compiles them to JavaScript.
 It does not require your GWT/browser library to run on the JVM. The JVM hosts the compiler, test orchestration
 and reporting; the browser executes the instrumented code.
 
@@ -16,16 +16,16 @@ and reporting; the browser executes the instrumented code.
 | Supported compiler | Upstream TeaVM 0.16.0, JavaScript backend. Keep compiler, class library, JUnit and Gradle plugin versions aligned. No TeaVM fork is required. |
 | Source locations | Java class files with source filenames and line-number tables. Normal javac builds include these; do not strip them or use `-g:none`. |
 | Source files | Accessible source roots for the exact revision of the measured classes. Supply directories above package paths, not individual files or source JARs. |
-| Compiler classpath | The tea-coco extension plus its runtime dependencies in the process/classpath that actually runs TeaVM. For stock TeaVMTestRunner this is the test runtime classpath. |
+| Compiler classpath | The TeaCoCo extension plus its runtime dependencies in the process/classpath that actually runs TeaVM. For stock TeaVMTestRunner this is the test runtime classpath. |
 | Invocation configuration | Coverage enabled, chosen source roots and a fresh writable baseline directory. Disable TeaVM incremental AST caching. |
 | Browser evidence | Captured stdout in standard JUnit XML for stock runner tests; explicit snapshot collection for a custom harness. |
 | Report step | Run the reporter after the tests with matching baselines, results and source roots. Keep these together when transferring work between CI jobs. |
 
 There are **no new annotations, interfaces, inheritance requirements or probes to add to library/application
 source**. Stock runner tests keep `@RunWith(TeaVMTestRunner.class)` and their existing platform annotations.
-A library cannot make itself covered just by depending on tea-coco: a test must call its code in a compiled build.
+A library cannot make itself covered just by depending on TeaCoCo: a test must call its code in a compiled build.
 
-Source maps and TeaVM debugger output are optional. tea-coco gets source locations directly from the compiler IR.
+Source maps and TeaVM debugger output are optional. TeaCoCo gets source locations directly from the compiler IR.
 Native JavaScript bodies and generated intrinsic internals are outside Java line coverage.
 
 ## Opt-in Maven profile
@@ -104,7 +104,7 @@ There is no automatic cross-module aggregation task in this first release.
 ## Applications with Playwright or another browser harness
 
 Adding a dependency to a JVM Playwright test does not instrument an application compiled in a separate task.
-Load tea-coco on the **application compiler's** classpath and pass the three `teavm.coverage.*` properties into that
+Load TeaCoCo on the **application compiler's** classpath and pass the three `teavm.coverage.*` properties into that
 TeaVM compilation. Keep the runtime available to TeaVM's class source as well. Use a dedicated coverage build;
 do not ship these instrumented bundles as production artifacts.
 
@@ -147,14 +147,14 @@ with reporting and preserves Gradle's failure result.
 For a Maven module, import `target/teavm-coverage.xml` with `sonar.coverageReportPaths`.
 For Gradle, use `build/reports/tea-coco/coverage.xml`. Ensure the scanner analyzes the same source checkout and can
 resolve the absolute source paths. If you also use JaCoCo, keep its XML in `sonar.coverage.jacoco.xmlReportPaths`;
-do not put tea-coco's generic XML there. Validate scanner imports before changing coverage gates or combining metrics.
-The current tea-coco version adds line hits only. For overlapping reports, Sonar ORs line hits but uses maximum
+do not put TeaCoCo's generic XML there. Validate scanner imports before changing coverage gates or combining metrics.
+The current TeaCoCo version adds line hits only. For overlapping reports, Sonar ORs line hits but uses maximum
 branch counts; this is not an exact union of complementary branch executions. See the
 [branch coverage analysis](branch-coverage-design.md#sonar-thresholds-and-the-limits-of-merging-xml).
 
 `not-emitted.json` is separate diagnostic data. Code removed by compilation is not marked as a zero-hit compiled
 line. Classes never reached by dependency analysis are not inventoried. Sonar may still count other analyzed sources
-according to its own scope; tea-coco does not alter exclusions or quality gates. No branch coverage is claimed.
+according to its own scope; TeaCoCo does not alter exclusions or quality gates. No branch coverage is claimed.
 
 ## Troubleshooting
 
@@ -165,4 +165,4 @@ according to its own scope; tea-coco does not alter exclusions or quality gates.
 | Unknown build ID / probe mismatch | Results and baselines came from different builds, or stale directories were combined. Clean and rerun together. |
 | Missing/ambiguous source | Supply the exact matching source checkout and unique package-relative paths. |
 | No coverage for dependency code | Add its matching source roots and make sure the tested application actually reaches the code. |
-| Snapshot artifact not found | Build and install the matching tea-coco version locally before running the consumer build. |
+| Snapshot artifact not found | Build and install the matching TeaCoCo version locally before running the consumer build. |

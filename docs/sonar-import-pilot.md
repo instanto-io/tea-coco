@@ -1,7 +1,7 @@
 # Live Sonar import check — 2026-10-26
 
-The dedicated [tea-coco coverage pilot](https://sonar.instanto.io/dashboard?id=tea-coco-jacoco-pilot)
-was analyzed at tea-coco commit `792f1154c3b4e682d80466e9e9f3117b9395d968` by
+The dedicated [TeaCoCo coverage pilot](https://sonar.instanto.io/dashboard?id=tea-coco-jacoco-pilot)
+was analyzed at TeaCoCo commit `792f1154c3b4e682d80466e9e9f3117b9395d968` by
 [workflow 40305984423](https://github.com/instanto-io/tea-coco/actions/runs/40305984423).
 The scanner imported the generated standard JaCoCo XML and submitted analysis
 successfully. Its CE task was `73187d8d-4c95-4bc1-b5d2-f0963fb17355`.
@@ -19,7 +19,7 @@ The authenticated Sonar UI was checked directly after analysis:
 | Combined coverage | (5 + 6) / (6 + 8) | 78.6% |
 | Quality gate | — | Passed |
 
-This verifies that Tea-Coco's original-bytecode browser report participates in
+This verifies that TeaCoCo's original-bytecode browser report participates in
 Sonar's normal line/condition coverage calculation. The first analysis has no
 new-code comparison baseline: the passed gate is **not** evidence that a new-code
 coverage threshold was exercised. No thresholds, exclusions or gates were changed.

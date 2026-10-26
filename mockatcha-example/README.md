@@ -1,13 +1,13 @@
-# Mockatcha + TeaVMTestRunner + Tea-Coco
+# Mockatcha + TeaVMTestRunner + TeaCoCo
 
 A standalone Maven project using the existing Mockatcha **timesheet example**.
 It combines ordinary Mockatcha mocks, mockatcha-bdd stubbing/call logs/matchers,
-stock TeaVMTestRunner browser execution and Tea-Coco line/branch coverage.
+stock TeaVMTestRunner browser execution and TeaCoCo line/branch coverage.
 No organisation parent or patched TeaVM runner is required by this project.
 
 This example lives in [tea-coco/mockatcha-example](https://github.com/instanto-io/tea-coco/tree/main/mockatcha-example).
 It consumes Mockatcha and mockatcha-bdd as external dependencies; it does not need
-a dedicated example repository or a parent relationship with Tea-Coco.
+a dedicated example repository or a parent relationship with TeaCoCo.
 Application classes are copied, with their Apache-2.0 notices, from
 [Mockatcha's examples at 4357c2b](https://github.com/instanto-io/mockatcha/tree/4357c2b3a122ca12b6b2a15ff20267d11276ee62/mockatcha-examples).
 The tests here add a deliberately complementary JVM/browser coverage exercise.
@@ -25,7 +25,7 @@ python3 verify_coverage.py
 For Instanto snapshot consumption, use the included `settings.xml`. Provide
 `FORGEJO_PACKAGE_USER` and `FORGEJO_PACKAGE_TOKEN` through your environment or CI
 secrets, then run `mvn -s settings.xml -U clean verify`. These resolve the existing
-Mockatcha and Tea-Coco libraries; this project does not publish a library artifact.
+Mockatcha and TeaCoCo libraries; this project does not publish a library artifact.
 The source libraries can also be built locally following their own setup guides.
 
 ## Read the example
@@ -45,25 +45,25 @@ The browser classes use `@SkipJVM` and `@After` cleanup. They deliberately avoid
 `@Rule` so they work with stock TeaVMTestRunner, without Instanto's rule extension.
 This does not prevent applications from using that extension where desired.
 Each browser scenario runs in ordinary, optimized and minified JavaScript modes.
-The mocks are test collaborators; Tea-Coco measures only `src/main/java` application
+The mocks are test collaborators; TeaCoCo measures only `src/main/java` application
 classes, not mock implementations or the testing libraries.
 
-## How JaCoCo and Tea-Coco map to test runners
+## How JaCoCo and TeaCoCo map to test runners
 
 Maven's **Surefire and Failsafe** plugins select and launch tests. **JUnit 4 and
-TeaVMTestRunner** decide where those tests execute. **JaCoCo and Tea-Coco** collect
+TeaVMTestRunner** decide where those tests execute. **JaCoCo and TeaCoCo** collect
 coverage; neither replaces the test runner. Mockatcha and mockatcha-bdd supply the
 mocks and assertions inside those tests, independently of coverage collection.
 
 | Test selection in this POM | Maven launcher | JUnit runner and execution | Coverage mechanism |
 | --- | --- | --- | --- |
 | `**/*JvmTest.java` | Surefire, `test` phase | Ordinary JUnit 4, JVM | JaCoCo JVM agent records original application classes into `target/jacoco.exec` |
-| `**/*BrowserIT.java` | Failsafe, `integration-test` phase | `@RunWith(TeaVMTestRunner.class)` compiles to JavaScript and runs in Chrome; `@SkipJVM` prevents the runner's JVM execution | Tea-Coco prepares JaCoCo-compatible probes in test-only class copies, collects browser hits, and reports against preserved originals |
+| `**/*BrowserIT.java` | Failsafe, `integration-test` phase | `@RunWith(TeaVMTestRunner.class)` compiles to JavaScript and runs in Chrome; `@SkipJVM` prevents the runner's JVM execution | TeaCoCo prepares JaCoCo-compatible probes in test-only class copies, collects browser hits, and reports against preserved originals |
 
 ```mermaid
 flowchart LR
   A[Original application bytecode] --> J[JUnit on JVM + JaCoCo agent]
-  A --> P[Tea-Coco test-only overlay]
+  A --> P[TeaCoCo test-only overlay]
   P --> T[TeaVMTestRunner: compile and run in Chrome]
   J --> E[JVM .exec probes]
   T --> B[Browser probe snapshots]
@@ -78,22 +78,22 @@ The build order in [pom.xml](pom.xml) is deliberate:
    `<argLine>@{jvmCoverageArgs}</argLine>`, so the JVM test has the standard agent.
 2. Maven compiles the application with line debug information, runs the JVM test,
    and packages its ordinary application JAR.
-3. Tea-Coco `prepare`, bound to `pre-integration-test`, preserves those exact class
+3. TeaCoCo `prepare`, bound to `pre-integration-test`, preserves those exact class
    bytes and creates `target/teavm-coverage/jacoco/classes`. This ordering prevents
    instrumented copies from entering the application JAR.
 4. Failsafe uses that directory as `classesDirectory`. Its empty `argLine` keeps
    the JVM agent away from the already instrumented copies. The coverage-enabled
-   TeaVM compilation loads Tea-Coco from the test classpath; no runner fork or
+   TeaVM compilation loads TeaCoCo from the test classpath; no runner fork or
    custom `@RunWith` class is needed.
-5. Stock TeaVMTestRunner runs the browser tests and captures output. Tea-Coco
+5. Stock TeaVMTestRunner runs the browser tests and captures output. TeaCoCo
    flushes probe snapshots when the stock test entry point completes or raises an
    error. Keep the Failsafe XML reports and their captured output: the reporter
    consumes them. Asynchronous test work must be awaited before the test ends.
-6. At `verify`, JaCoCo writes its JVM-only report. Tea-Coco writes a browser-only
+6. At `verify`, JaCoCo writes its JVM-only report. TeaCoCo writes a browser-only
    report, then a merged report using `<executionData>` pointing at `jacoco.exec`.
    Failsafe's final `verify` still fails the build if any browser test failed.
 
-Tea-Coco uses JaCoCo's original class IDs and probe indices for the union. A hit
+TeaCoCo uses JaCoCo's original class IDs and probe indices for the union. A hit
 from either runtime covers that probe; overlapping hits count once. The same
 JaCoCo analyzer then calculates line and branch counters from the original class
 files. It does not add XML percentages or infer a covered branch from a hit on the
@@ -109,7 +109,7 @@ raw data from changed class versions cannot safely be merged.
   and reporting. Retain `teavm-junit` and the other TeaVM test dependencies shown
   in this POM. Use compatible versions of the plugin and runtime.
 - Separate JVM and browser test selection explicitly. The `JvmTest`/`BrowserIT`
-  suffixes are this example's convention, not a Tea-Coco requirement. Existing
+  suffixes are this example's convention, not a TeaCoCo requirement. Existing
   Surefire-based browser suites can stay on Surefire if their preparation phase,
   classpath and agent configuration are arranged accordingly.
 - Keep the normal agent on JVM tests and off the browser compilation's prepared
@@ -143,7 +143,7 @@ and the JVM's one outcome are complementary, so identity-aware merging reaches
 six. Importing two XML count summaries would not establish that union.
 
 Surefire runs the JVM test against original classes with JaCoCo's JVM agent.
-Tea-Coco then prepares an overlay in `pre-integration-test`; Failsafe runs browser
+TeaCoCo then prepares an overlay in `pre-integration-test`; Failsafe runs browser
 tests against it **without** the agent. The normal application JAR is already
 packaged from originals. Reports are written before Failsafe's final failure check,
 so available coverage is retained without changing a failing build into success.
@@ -164,7 +164,7 @@ compiler diagnostics do not subtract omitted code from the denominator.
 
 ## CI
 
-Tea-Coco CI runs this project after publishing its verified snapshots, using an
+TeaCoCo CI runs this project after publishing its verified snapshots, using an
 isolated Maven cache. The job uploads diagnostic reports to `packages.instanto.io`
 and verifies their SHA-256 on readback. It uses the organisation Forgejo package-user
 and package-write token secrets and the `instanto-container` runner. This example

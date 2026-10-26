@@ -1,6 +1,6 @@
 # Original-bytecode line and branch coverage
 
-Tea-Coco's opt-in `jacoco` mode uses JaCoCo 0.8.15 probes in test-only class copies,
+TeaCoCo's opt-in `jacoco` mode uses JaCoCo 0.8.15 probes in test-only class copies,
 compiles those copies with stock TeaVM 0.16.0, and collects browser hits through
 stock `TeaVMTestRunner`. JaCoCo analyzes the preserved original classes. No fork,
 application annotations, source maps, JVM agent in the browser, or DevTools API is
@@ -24,7 +24,7 @@ are covered by the repository's checks. The Gradle plugin is tested with Gradle
   bytes**, using the same JaCoCo version. Separate JVM and browser test tasks.
 
 Source roots select classes by package and `SourceFile`; they must match the
-class compilation. Tea-Coco validates original and prepared class checksums, but
+class compilation. TeaCoCo validates original and prepared class checksums, but
 cannot prove that supplied source text produced those bytes. Duplicate differing
 classpath entries, ambiguous sources, and multi-release dependency JARs fail
 preparation; select an explicit release's classes for a multi-release library.
@@ -148,7 +148,7 @@ Use another task against original classes for JVM coverage and supply
 `executionData`; wire that task as a dependency when collecting both in one build.
 
 `-PteaCoco.enabled=false` leaves normal test execution and its classpath unchanged.
-A clean disabled build produces no Tea-Coco probes or reports. Use one plugin
+A clean disabled build produces no TeaCoCo probes or reports. Use one plugin
 instance per project and one selected browser test task for now.
 
 ## Reports and Sonar
@@ -165,7 +165,7 @@ uses `sonar.coverageReportPaths` instead. Import the **single merged report** fo
 the selected source scope; do not try to combine complementary branches by
 importing separate JVM/browser XML counts. Matching raw probe hits are ORed before
 JaCoCo calculates line and branch counters. The standard XML feeds Sonar's normal
-coverage calculation; Tea-Coco does not change gates, exclusions or thresholds.
+coverage calculation; TeaCoCo does not change gates, exclusions or thresholds.
 The manual `sonar-pilot.yml` workflow checks the server's actual imported counters
 and coverage calculation in a dedicated fixture project. See the [live result](sonar-import-pilot.md)
 and the separate read-token requirement for automated readback.
@@ -187,7 +187,7 @@ compares separate uninstrumented builds; see [the design notes](branch-coverage-
 
 ## Custom harnesses and implementation boundary
 
-The normal integration needs no runner extension. Tea-Coco adds a flush at stock
+The normal integration needs no runner extension. TeaCoCo adds a flush at stock
 `TestJsEntryPoint.main` exits/raises, after its awaited test work. A custom entry
 point must call `JacocoRuntime.flush(runId)` after completion and on failure, using
 the UUID from `jacoco/manifest.json`. Preserve the line beginning
@@ -197,7 +197,7 @@ roots, optional `--exec=/path/to/jvm.exec`, and JUnit-report directories.
 
 The portable runtime holds boolean arrays; it is not JaCoCo's JVM agent. Java 11+
 JaCoCo instrumentation uses a constant-dynamic lookup that TeaVM 0.16 cannot parse.
-Tea-Coco lowers that specific synthetic lookup to an ordinary static call without
+TeaCoCo lowers that specific synthetic lookup to an ordinary static call without
 changing JaCoCo's original class ID, probe placement or index. Other bytecode is
 not rewritten by that adapter. The [parity experiment](../scripts/check_jacoco_teavm.py)
 compares real JVM-agent and browser probe arrays and their complementary union.

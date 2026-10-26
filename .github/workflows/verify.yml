@@ -1,4 +1,4 @@
-name: Verify and publish tea-coco
+name: Verify and publish TeaCoCo
 on:
   push:
     branches: [main]

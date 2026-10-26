@@ -25,7 +25,7 @@ jobs:
       - name: Check existing analysis access
         run: |
           if [ -z "$SONAR_TOKEN" ]; then
-            echo '::error::The existing organisation SONAR_TOKEN must be available to tea-coco.'
+            echo '::error::The existing organisation SONAR_TOKEN must be available to TeaCoCo.'
             exit 1
           fi
       - name: Verify stock runner and install the tested reactor
@@ -35,7 +35,7 @@ jobs:
           mvn -B -ntp -s central-settings.xml -f jacoco-example/pom.xml \
             org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
             -Dsonar.projectKey=tea-coco-jacoco-pilot \
-            '-Dsonar.projectName=tea-coco coverage pilot' \
+            '-Dsonar.projectName=TeaCoCo coverage pilot' \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/teavm-coverage.xml
       - name: Verify imported counters, coverage calculation and gate status
         if: inputs.verify_readback

@@ -70,7 +70,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
     var runtime = project.getConfigurations().create("teaCocoRuntime");
     runtime.setCanBeConsumed(false);
     runtime.setCanBeResolved(true);
-    runtime.setDescription("tea-coco compiler extension and isolated reporter runtime");
+    runtime.setDescription("TeaCoCo compiler extension and isolated reporter runtime");
     var report =
         project
             .getTasks()
@@ -82,7 +82,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                   task.setDescription("Collect TeaVM browser coverage as XML");
                   task.getMainClass().set("io.instanto.teavm.coverage.CoverageReporter");
                   task.setClasspath(runtime);
-                  task.onlyIf("tea-coco is enabled", ignored -> extension.getEnabled().get());
+                  task.onlyIf("TeaCoCo is enabled", ignored -> extension.getEnabled().get());
                   task.notCompatibleWithConfigurationCache(
                       "Coverage configures the selected test task after DSL evaluation");
                 });
@@ -93,9 +93,9 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                 "teaCocoReport",
                 task -> {
                   task.setGroup("verification");
-                  task.setDescription("Run browser tests and generate tea-coco coverage");
+                  task.setDescription("Run browser tests and generate TeaCoCo coverage");
                   task.dependsOn(report);
-                  task.onlyIf("tea-coco is enabled", ignored -> extension.getEnabled().get());
+                  task.onlyIf("TeaCoCo is enabled", ignored -> extension.getEnabled().get());
                 });
     // TeaVM's own Gradle plugins configure the same public Test API. Resolve the chosen
     // task after the consumer has set its DSL, without depending on TeaVM plugin internals.
@@ -123,7 +123,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
           }
           String mode = extension.getMode().get();
           if (!mode.equals("lines") && !mode.equals("jacoco"))
-            throw new IllegalArgumentException("Unknown tea-coco mode: " + mode);
+            throw new IllegalArgumentException("Unknown TeaCoCo mode: " + mode);
           boolean jacoco = mode.equals("jacoco");
           var prepare =
               project

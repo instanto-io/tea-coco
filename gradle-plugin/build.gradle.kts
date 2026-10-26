@@ -19,7 +19,7 @@ gradlePlugin {
         create("teaCoco") {
             id = "io.instanto.tea-coco"
             implementationClass = "io.instanto.teacoco.gradle.TeaCocoPlugin"
-            displayName = "tea-coco browser coverage"
+            displayName = "TeaCoCo browser coverage"
             description = "Java source coverage for unmodified TeaVM browser tests"
         }
     }
@@ -38,7 +38,7 @@ publishing {
     }
     publications.withType<MavenPublication>().configureEach {
         pom {
-            name.set("tea-coco Gradle integration")
+            name.set("TeaCoCo Gradle integration")
             description.set("Optional Java line and branch coverage for unmodified TeaVM releases")
             url.set("https://github.com/instanto-io/tea-coco")
             licenses { license {

@@ -71,7 +71,7 @@ class roots, JVM execution-data merging and the selected task's agent behavior.
 | Property | Default | Purpose |
 | --- | --- | --- |
 | `enabled` | true, or `-PteaCoco.enabled=false` | Opt out of instrumentation/reporting without changing tests. |
-| `version` | 0.1.0-SNAPSHOT | Matching tea-coco runtime/reporter version. |
+| `version` | 0.1.0-SNAPSHOT | Matching TeaCoCo runtime/reporter version. |
 | `mode` | lines | `lines` for emitted-source generic XML; `jacoco` for original-bytecode counters. |
 | `classRoots` | main output class directories | JaCoCo mode input directories/JARs. |
 | `executionData` | empty | Optional compatible JVM JaCoCo `.exec` inputs. |
@@ -80,7 +80,7 @@ class roots, JVM execution-data merging and the selected task's agent behavior.
 | `dataDirectory` | build/tea-coco/data | Dedicated baseline directory below the project's build directory. |
 | `reportFile` | build/reports/tea-coco/coverage.xml | Generic or JaCoCo XML, depending on mode. |
 
-The plugin adds tea-coco only to the selected test's runtime and its separate reporting configuration. Production
+The plugin adds TeaCoCo only to the selected test's runtime and its separate reporting configuration. Production
 runtime dependencies are unchanged. It requires captured stdout in JUnit XML and enables it for the selected task.
 The compiler's source roots and reporter's source roots come from the same setting.
 

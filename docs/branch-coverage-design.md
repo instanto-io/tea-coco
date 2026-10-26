@@ -1,4 +1,4 @@
-# Branch coverage: JaCoCo reference and tea-coco contract
+# Branch coverage: JaCoCo reference and TeaCoCo contract
 
 Status: **JaCoCo/browser probe parity and raw-data merging are integrated in opt-in Maven/Gradle `jacoco` mode. The 67-test GWT pilot passes with unchanged denominators.**
 See [consumer configuration](jacoco-mode.md) and [measured pilot results](gwt-user-compat-pilot.md).
@@ -16,8 +16,8 @@ The standalone experiment now reuses JaCoCo's instrumentation as well as its ana
 
 1. Keep the original selected class files as the reporting baseline.
 2. Instrument compiler-input copies with JaCoCo 0.8.15's public `Instrumenter`, using a custom
-   `IExecutionDataAccessorGenerator` to obtain a tea-coco-managed boolean probe array for each original class ID.
-3. Compile those copies with stock TeaVM and collect the probe arrays from browser tests through tea-coco.
+   `IExecutionDataAccessorGenerator` to obtain a TeaCoCo-managed boolean probe array for each original class ID.
+3. Compile those copies with stock TeaVM and collect the probe arrays from browser tests through TeaCoCo.
 4. Feed the collected class IDs and probe bits into JaCoCo's execution-data/analyzer APIs, using the original files
    for reporting. Let JaCoCo apply its compiler filters and infer line/branch coverage from the probes.
 5. Where JVM and browser runs use identical original class bytes and compatible instrumentation, merge their raw
@@ -149,7 +149,7 @@ Source: [StringSwitchJavacFilter](https://github.com/jacoco/jacoco/blob/v0.8.15/
 
 ## Reproducible evidence
 
-Run from the tea-coco repository with JDK 21 and Maven:
+Run from the TeaCoCo repository with JDK 21 and Maven:
 
 ```sh
 python3 scripts/check_jacoco_branch_reference.py
@@ -309,7 +309,7 @@ browser APIs and generated bindings.
 
 On 2026-10-25, generating a JaCoCo report from that existing execution file against the compiled runtime classes
 reported **0/6,341 lines and 0/2,230 branches** across 326 classes. This is an existing-build baseline, not a newly run
-clean comparison. The tea-coco pilot must rerun both measurements from a pinned clean revision and report each tool's
+clean comparison. The TeaCoCo pilot must rerun both measurements from a pinned clean revision and report each tool's
 source scope; the emitted TeaVM denominator may be smaller. Do not replace the repository's existing source-map
 coverage pipeline or alter its Sonar gates merely to run this experiment.
 

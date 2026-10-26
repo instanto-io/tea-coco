@@ -66,7 +66,7 @@ public final class ReportMojo extends AbstractMojo {
         return;
       }
       if (!"lines".equals(mode))
-        throw new IllegalArgumentException("Unknown tea-coco mode: " + mode);
+        throw new IllegalArgumentException("Unknown TeaCoCo mode: " + mode);
       new CoverageReporter(sourceRoots.stream().map(Path::of).toList())
           .generate(
               dataDirectory.toPath(),

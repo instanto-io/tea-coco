@@ -1,6 +1,6 @@
-# Tea-Coco
+# TeaCoCo
 
-Tea-Coco measures Java source coverage from tests running in the browser. It adds
+TeaCoCo measures Java source coverage from tests running in the browser. It adds
 coverage probes when TeaVM compiles Java to JavaScript, collects their results,
 and produces coverage reports for Sonar. Opt-in JaCoCo mode adds original-bytecode
 line and branch coverage and exact raw JVM/browser probe merging.
@@ -27,7 +27,7 @@ Chrome DevTools coverage APIs.
 
 ## Line and branch coverage
 
-Use `mode=jacoco` for JaCoCo-compatible counters. Tea-Coco prepares test-only class
+Use `mode=jacoco` for JaCoCo-compatible counters. TeaCoCo prepares test-only class
 copies, preserves originals for reporting, and collects probes through the stock
 runner. It leaves packaged application JARs unchanged. The
 [JaCoCo mode guide](docs/jacoco-mode.md) has complete Maven and Gradle configuration,
@@ -52,7 +52,7 @@ The remaining introductory examples describe the backward-compatible default
 
 Start with a project whose TeaVM browser tests already run successfully. Keep its
 existing TeaVM JUnit dependencies, browser selection and runner configuration.
-Add Tea-Coco as a test dependency:
+Add TeaCoCo as a test dependency:
 
 ```xml
 <dependency>

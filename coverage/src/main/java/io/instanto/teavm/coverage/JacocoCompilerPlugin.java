@@ -48,7 +48,7 @@ final class JacocoCompilerPlugin {
       manifest =
           json.readValue(data.resolve("manifest.json").toFile(), JacocoPreparer.Manifest.class);
     } catch (RuntimeException e) {
-      throw new IllegalStateException("Run tea-coco prepare before browser compilation", e);
+      throw new IllegalStateException("Run TeaCoCo prepare before browser compilation", e);
     }
     if (manifest.version() != 1 || manifest.run() == null || manifest.classes() == null)
       throw new IllegalArgumentException("Invalid JaCoCo baseline");

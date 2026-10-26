@@ -126,7 +126,7 @@ public final class JacocoReporter {
         MultiSourceFileLocator sources = new MultiSourceFileLocator(2);
         for (Path root : roots)
           sources.add(new DirectorySourceFileLocator(root.toFile(), "UTF-8", 2));
-        visitor.visitBundle(coverage.getBundle("tea-coco JVM and browser"), sources);
+        visitor.visitBundle(coverage.getBundle("TeaCoCo JVM and browser"), sources);
         visitor.visitEnd();
       }
       writeEvidence(baseline, diagnostics, coverage, json);

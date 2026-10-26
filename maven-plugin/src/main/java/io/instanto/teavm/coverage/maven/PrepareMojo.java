@@ -50,7 +50,7 @@ public final class PrepareMojo extends AbstractMojo {
   @Override
   public void execute() throws MojoExecutionException {
     if ("lines".equals(mode)) return;
-    if (!"jacoco".equals(mode)) throw new MojoExecutionException("Unknown tea-coco mode: " + mode);
+    if (!"jacoco".equals(mode)) throw new MojoExecutionException("Unknown TeaCoCo mode: " + mode);
     try {
       Path build = Path.of(project.getBuild().getDirectory()).toAbsolutePath().normalize();
       Path directory = dataDirectory.toPath().toAbsolutePath().normalize();
