@@ -42,7 +42,8 @@ also matched the fixture's exact line/branch counts and combined percentage.
 The [Mockatcha timesheet example](mockatcha-example/README.md) combines core mocks,
 BDD spies and stock TeaVMTestRunner with complementary JVM/browser tests. Its
 checked reports demonstrate **1/6 JVM + 5/6 browser → 6/6 merged branch outcomes**,
-with unchanged application JARs. It is also available as a standalone repository.
+with unchanged application JARs. The example is a standalone Maven project kept
+alongside the tool, consuming the testing libraries as external dependencies.
 
 The remaining introductory examples describe the backward-compatible default
 `lines` mode, which reports only the source locations present in compiled tests.

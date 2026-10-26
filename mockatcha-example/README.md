@@ -5,8 +5,9 @@ It combines ordinary Mockatcha mocks, mockatcha-bdd stubbing/call logs/matchers,
 stock TeaVMTestRunner browser execution and Tea-Coco line/branch coverage.
 No organisation parent or patched TeaVM runner is required by this project.
 
-The source is maintained in [tea-coco/mockatcha-example](https://github.com/instanto-io/tea-coco/tree/main/mockatcha-example)
-and also available as [a standalone demo repository](https://github.com/instanto-io/mockatcha-tea-coco-demo).
+This example lives in [tea-coco/mockatcha-example](https://github.com/instanto-io/tea-coco/tree/main/mockatcha-example).
+It consumes Mockatcha and mockatcha-bdd as external dependencies; it does not need
+a dedicated example repository or a parent relationship with Tea-Coco.
 Application classes are copied, with their Apache-2.0 notices, from
 [Mockatcha's examples at 4357c2b](https://github.com/instanto-io/mockatcha/tree/4357c2b3a122ca12b6b2a15ff20267d11276ee62/mockatcha-examples).
 The tests here add a deliberately complementary JVM/browser coverage exercise.
@@ -79,16 +80,11 @@ For Sonar, import only `target/teavm-coverage.xml` with
 quality-gate changes separate. JavaScript is the supported coverage backend here;
 compiler diagnostics do not subtract omitted code from the denominator.
 
-## CI and syncing the standalone copy
+## CI
 
-The standalone workflow verifies published snapshots from an isolated Maven cache,
-then uploads diagnostic reports to `packages.instanto.io` and verifies their SHA-256
-on readback. The repository needs the organisation Forgejo package-user and
-package-write token secrets and the `instanto-container` runner. Tea-Coco runs the
-same example after its own snapshot publication. Neither workflow deploys this
-application JAR.
-
-The Tea-Coco directory is the source of truth. Export a reviewed revision with
-`git archive <revision>:mockatcha-example` into the standalone checkout, preserve
-its `.git` directory, and record the source revision in `ORIGIN.md`. Build outputs
-and credentials must never be copied.
+Tea-Coco CI runs this project after publishing its verified snapshots, using an
+isolated Maven cache. The job uploads diagnostic reports to `packages.instanto.io`
+and verifies their SHA-256 on readback. It uses the organisation Forgejo package-user
+and package-write token secrets and the `instanto-container` runner. This example
+does not deploy an application JAR and is not part of the default Maven reactor,
+so the tool's normal build remains independent of Mockatcha snapshot availability.
