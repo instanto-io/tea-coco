@@ -1,6 +1,11 @@
 name: Verify JaCoCo browser coverage import in Sonar
 on:
   workflow_dispatch:
+    inputs:
+      verify_readback:
+        description: Verify server counters through the API (requires read access)
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -33,4 +38,15 @@ jobs:
             '-Dsonar.projectName=tea-coco coverage pilot' \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/teavm-coverage.xml
       - name: Verify imported counters, coverage calculation and gate status
+        if: inputs.verify_readback
         run: python3 scripts/check_sonar_import.py
+      - name: Link results for manual browser verification
+        if: ${{ !inputs.verify_readback }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
+          Analysis was submitted. Verify the processed counters and quality gate in the
+          [Sonar pilot dashboard](https://sonar.instanto.io/dashboard?id=tea-coco-jacoco-pilot).
+
+          API readback was not requested. A successful workflow confirms build and analysis
+          submission; it does not assert server-side coverage counters or quality gate status.
+          SUMMARY

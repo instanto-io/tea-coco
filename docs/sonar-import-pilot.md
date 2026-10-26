@@ -31,11 +31,16 @@ API read. `SONAR_READ_TOKEN` was not configured. This is a readback access failu
 not a failed import or a passing automated readback. The exact counters above were
 verified through the logged-in UI, not inferred from scanner submission success.
 
+Manual browser verification is the current default, as requested. The workflow
+links the dashboard in its job summary and does not claim automated counter or
+gate verification. Its optional `verify_readback` input enables the API assertions
+when read access becomes available. Existing failures are not rewritten as passes.
+
 For repeatable automated checks, make a Sonar **user** token with the required
 project read access available as `SONAR_READ_TOKEN` to the repository; keep the
 analysis credential separate. Do not copy tokens into source or logs. See
 [Sonar's token documentation](https://docs.sonarsource.com/sonarqube-community-build/user-guide/managing-tokens)
-for user versus analysis tokens. Then rerun the manual `sonar-pilot.yml` workflow.
+for user versus analysis tokens. Then run `sonar-pilot.yml` with `verify_readback` enabled.
 `scripts/check_sonar_import.py` waits for processing, compares all four integer
 counters and the combined percentage, and records the gate status. A counter
 mismatch or failed gate remains a failed check.
