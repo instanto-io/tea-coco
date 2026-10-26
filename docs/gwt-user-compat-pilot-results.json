@@ -1,0 +1,79 @@
+{
+  "revision": "dfacf75d646ead076bf3de6297e43e6cc3a9b281",
+  "tests": 67,
+  "suites": 14,
+  "jacocoVersion": "0.8.15",
+  "teavmVersion": "0.16.0",
+  "timing": {
+    "plain": {
+      "seconds": 48.371,
+      "javascriptFiles": 14,
+      "javascriptBytes": 6184781,
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "instrumented": {
+      "seconds": 49.364,
+      "javascriptFiles": 14,
+      "javascriptBytes": 7272744,
+      "tests": 67,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "jvm": {
+    "INSTRUCTION": {
+      "covered": 0,
+      "missed": 24266
+    },
+    "BRANCH": {
+      "covered": 0,
+      "missed": 2230
+    },
+    "LINE": {
+      "covered": 0,
+      "missed": 6344
+    },
+    "COMPLEXITY": {
+      "covered": 0,
+      "missed": 3853
+    },
+    "METHOD": {
+      "covered": 0,
+      "missed": 2707
+    },
+    "CLASS": {
+      "covered": 0,
+      "missed": 326
+    }
+  },
+  "union": {
+    "INSTRUCTION": {
+      "covered": 6517,
+      "missed": 17749
+    },
+    "BRANCH": {
+      "covered": 499,
+      "missed": 1731
+    },
+    "LINE": {
+      "covered": 1764,
+      "missed": 4580
+    },
+    "COMPLEXITY": {
+      "covered": 768,
+      "missed": 3085
+    },
+    "METHOD": {
+      "covered": 641,
+      "missed": 2066
+    },
+    "CLASS": {
+      "covered": 120,
+      "missed": 206
+    }
+  }
+}

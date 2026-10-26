@@ -1,0 +1,34 @@
+--- a/gwt-user-compat-tests/pom.xml
++++ b/gwt-user-compat-tests/pom.xml
+@@ -1,3 +1,4 @@
++<?xml version='1.0' encoding='UTF-8'?>
+ <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+@@ -44,7 +45,7 @@
+       <artifactId>elemental2-compat</artifactId>
+       <version>${elemental2.compat.version}</version>
+     </dependency>
+-  </dependencies>
++  <dependency><groupId>io.instanto</groupId><artifactId>tea-coco</artifactId><version>0.1.0-SNAPSHOT</version><scope>test</scope></dependency></dependencies>
+   <build>
+     <plugins>
+       <plugin>
+@@ -90,12 +91,12 @@
+           <systemPropertyVariables>
+             <teavm.junit.target>${project.build.directory}/teavm-tests</teavm.junit.target>
+             <teavm.junit.js.runner>${teavm.junit.js.runner}</teavm.junit.js.runner>
+-          </systemPropertyVariables>
+-        </configuration>
++          <teavm.coverage.enabled>true</teavm.coverage.enabled><teavm.coverage.mode>jacoco</teavm.coverage.mode><teavm.coverage.dataDirectory>${project.build.directory}/teavm-coverage</teavm.coverage.dataDirectory></systemPropertyVariables>
++        <classesDirectory>${pilot.classesDirectory}</classesDirectory></configuration>
+       </plugin>
+-    </plugins>
++    <plugin><groupId>io.instanto</groupId><artifactId>tea-coco-maven-plugin</artifactId><version>0.1.0-SNAPSHOT</version><configuration><sourceRoots><sourceRoot>${project.basedir}/../gwt-user-compat/src/main/java</sourceRoot></sourceRoots><dependencyIncludes><dependencyInclude>io.instanto:gwt-user-compat</dependencyInclude></dependencyIncludes><executionData><file>${project.basedir}/../pilot-evidence/baseline/jvm.exec</file></executionData></configuration><executions><execution><id>tea-coco-prepare</id><goals><goal>prepare</goal></goals></execution><execution><id>tea-coco-report</id><goals><goal>report</goal></goals></execution></executions></plugin></plugins>
+   </build>
+   <properties>
+     <maven.deploy.skip>true</maven.deploy.skip>
+-  </properties>
+-</project>
++  <tea-coco.mode>jacoco</tea-coco.mode><pilot.classesDirectory>${project.build.directory}/teavm-coverage/jacoco/classes</pilot.classesDirectory></properties>
++</project>

@@ -1,6 +1,7 @@
 # Branch coverage: JaCoCo reference and tea-coco contract
 
-Status: **JaCoCo/browser probe parity and exact raw-data merging verified in a standalone prototype; production adapters remain line-only**.
+Status: **JaCoCo/browser probe parity and raw-data merging are integrated in opt-in Maven/Gradle `jacoco` mode. The 67-test GWT pilot passes with unchanged denominators.**
+See [consumer configuration](jacoco-mode.md) and [measured pilot results](gwt-user-compat-pilot.md).
 Recorded 2026-10-25. Reference tools: JaCoCo **0.8.15**, javac **21** with `--release 17`, TeaVM **0.16.0**.
 JaCoCo 0.8.15 matches the version configured in the Instanto parent POM. The live JaCoCo documentation describes
 its current development version, so the experiments and source inspection below pin 0.8.15 explicitly.
@@ -187,8 +188,7 @@ Probe state means “executed at least once”, not execution frequency. JaCoCo 
 using a class-file checksum and merges matching execution data by probe identity. Analysis must use the original
 matching classes, not a different compilation or the already instrumented class files.
 
-tea-coco can start with more explicit edge probes for correctness and optimize probe placement later. It does not
-need to reproduce JaCoCo's minimal-probe algorithm to implement the same C1 definition for equivalent graphs.
+The integrated original-bytecode mode reuses JaCoCo's own probe placement; it does not implement a second minimal-probe algorithm.
 
 Sources: [control-flow/probe strategy](https://www.jacoco.org/jacoco/trunk/doc/flow.html),
 [class identity design](https://www.jacoco.org/jacoco/trunk/doc/implementation.html),
@@ -301,7 +301,7 @@ explicit in diagnostics and in the Sonar import policy.
 * A real Sonar import checking line hits, branch totals, new-code metrics and threshold evaluation.
 * Runtime, compilation-time and bundle-size measurements on the first real module before enabling it routinely.
 
-## First real-world exercise
+## First real-world exercise (initial selection)
 
 Use `gwt-user-compat`, measured by `gwt-user-compat-tests` in `instanto-io/teavm-compat`. The existing local results
 contain 67 passing tests in 14 TeaVMTestRunner suites using `@SkipJVM`, covering widgets, lifecycle, scheduling,
@@ -312,3 +312,7 @@ reported **0/6,341 lines and 0/2,230 branches** across 326 classes. This is an e
 clean comparison. The tea-coco pilot must rerun both measurements from a pinned clean revision and report each tool's
 source scope; the emitted TeaVM denominator may be smaller. Do not replace the repository's existing source-map
 coverage pipeline or alter its Sonar gates merely to run this experiment.
+
+The clean pinned comparison was subsequently completed on 2026-10-26: see
+[the pilot record](gwt-user-compat-pilot.md). Its updated source revision has 6,344 lines;
+the JVM and browser measurements agree exactly on that denominator.

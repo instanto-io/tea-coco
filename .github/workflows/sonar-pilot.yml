@@ -1,0 +1,36 @@
+name: Verify JaCoCo browser coverage import in Sonar
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sonar-import:
+    runs-on: [self-hosted, instanto-container]
+    timeout-minutes: 30
+    env:
+      SONAR_HOST_URL: https://sonar.instanto.io
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_READ_TOKEN: ${{ secrets.SONAR_READ_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Check existing analysis access
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo '::error::The existing organisation SONAR_TOKEN must be available to tea-coco.'
+            exit 1
+          fi
+      - name: Verify stock runner and install the tested reactor
+        run: mvn -B -ntp -s central-settings.xml -pl jacoco-example -am clean install
+      - name: Analyze the isolated coverage fixture
+        run: |
+          mvn -B -ntp -s central-settings.xml -f jacoco-example/pom.xml \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
+            -Dsonar.projectKey=tea-coco-jacoco-pilot \
+            '-Dsonar.projectName=tea-coco coverage pilot' \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/teavm-coverage.xml
+      - name: Verify imported counters, coverage calculation and gate status
+        run: python3 scripts/check_sonar_import.py

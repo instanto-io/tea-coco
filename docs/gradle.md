@@ -74,16 +74,23 @@ Run `./gradlew teaCocoReport`. This runs the selected browser tests, writes
 The selected test task also finalizes with reporting when run directly (`./gradlew test` or `check`).
 A failing test remains a failed build even if a diagnostic report is produced.
 
+Set `teaCoco { mode.set("jacoco") }` for original-bytecode branch coverage and
+standard JaCoCo XML instead. See the [JaCoCo mode guide](jacoco-mode.md#gradle) for
+class roots, JVM execution-data merging and the selected task's agent behavior.
+
 ## Configuration
 
 | Property | Default | Purpose |
 | --- | --- | --- |
 | `enabled` | true, or `-PteaCoco.enabled=false` | Opt out of instrumentation/reporting without changing tests. |
 | `version` | 0.1.0-SNAPSHOT | Matching tea-coco runtime/reporter version. |
+| `mode` | lines | `lines` for emitted-source generic XML; `jacoco` for original-bytecode counters. |
+| `classRoots` | main output class directories | JaCoCo mode input directories/JARs. |
+| `executionData` | empty | Optional compatible JVM JaCoCo `.exec` inputs. |
 | `testTask` | test | Existing Gradle `Test` task to instrument and collect. |
 | `sourceRoots` | main source set's Java directories | Exact measured library/application sources; may point at another project. |
 | `dataDirectory` | build/tea-coco/data | Dedicated baseline directory below the project's build directory. |
-| `reportFile` | build/reports/tea-coco/coverage.xml | Sonar generic coverage output. |
+| `reportFile` | build/reports/tea-coco/coverage.xml | Generic or JaCoCo XML, depending on mode. |
 
 The plugin adds tea-coco only to the selected test's runtime and its separate reporting configuration. Production
 runtime dependencies are unchanged. It requires captured stdout in JUnit XML and enables it for the selected task.
@@ -103,7 +110,7 @@ Other tasks keep their normal Gradle caching behavior. `dataDirectory` must be a
 * Gradle configuration cache is explicitly unsupported for the instrumented test/report tasks in this first version.
 * This is not automatic instrumentation of TeaVM's `generateJavaScript` tasks. Custom Playwright/application harnesses
   use the [compiler configuration and collection contract](consumer-guide.md#applications-with-playwright-or-another-browser-harness).
-* No automatic Sonar plugin dependency or gate changes; set `sonar.coverageReportPaths` to the report path yourself.
+* No automatic Sonar plugin dependency or gate changes; set `sonar.coverageReportPaths` for lines mode, or `sonar.coverage.jacoco.xmlReportPaths` for JaCoCo mode.
 
 TeaVM's plugins remain responsible for compilation and browser-test settings; see its
 [official Gradle guide](https://teavm.org/docs/tooling/gradle.html). The plugin uses Gradle's standard
@@ -115,6 +122,7 @@ TeaVM's plugins remain responsible for compilation and browser-test settings; se
 mvn -B -ntp -s central-settings.xml clean install
 ./gradlew check publishToMavenLocal
 python3 scripts/smoke_gradle_consumer.py
+python3 scripts/smoke_jacoco_gradle_consumer.py
 ```
 
 For local development, use `mavenLocal()` in both repository blocks instead of the authenticated registry.

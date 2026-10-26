@@ -2,7 +2,8 @@
 
 Tea-Coco measures Java source coverage from tests running in the browser. It adds
 coverage probes when TeaVM compiles Java to JavaScript, collects their results,
-and produces a Sonar generic coverage report.
+and produces coverage reports for Sonar. Opt-in JaCoCo mode adds original-bytecode
+line and branch coverage and exact raw JVM/browser probe merging.
 
 **Alpha — `0.1.0-SNAPSHOT`.** The extension targets **TeaVM 0.16.0** and is intended
 for evaluation in coverage test builds. It works with the stock TeaVM compiler
@@ -12,6 +13,7 @@ can be installed from source.
 ## What is implemented
 
 - Java source line coverage from actual browser execution.
+- Opt-in JaCoCo line/branch coverage with a shared JVM/browser probe identity.
 - Opt-in instrumentation restricted to the source roots you select.
 - Collection through the existing TeaVM JUnit runner, including failed tests.
 - Merging of browser results across test compilations and JVM forks.
@@ -23,7 +25,23 @@ The examples verify ordinary, minified and optimized JavaScript builds in Chrome
 The instrumentation uses compiler metadata and does not depend on source maps or
 Chrome DevTools coverage APIs.
 
-## Add coverage to Maven tests
+## Line and branch coverage
+
+Use `mode=jacoco` for JaCoCo-compatible counters. Tea-Coco prepares test-only class
+copies, preserves originals for reporting, and collects probes through the stock
+runner. It leaves packaged application JARs unchanged. The
+[JaCoCo mode guide](docs/jacoco-mode.md) has complete Maven and Gradle configuration,
+JVM `.exec` merging, failure handling and compiler-diagnostic limits.
+
+The first real [GWT compatibility pilot](docs/gwt-user-compat-pilot.md) passed all
+67 browser tests and covered **1,764/6,344 lines and 499/2,230 branches**, compared
+with zero coverage from the JVM-only measurement of those browser tests. Both
+reports retain the same original-bytecode denominator.
+
+The remaining introductory examples describe the backward-compatible default
+`lines` mode, which reports only the source locations present in compiled tests.
+
+## Add line-only coverage to Maven tests
 
 Start with a project whose TeaVM browser tests already run successfully. Keep its
 existing TeaVM JUnit dependencies, browser selection and runner configuration.
@@ -106,11 +124,12 @@ in the diagnostic JSON rather than as zero-hit entries in the Sonar report.
 Classes never reached by dependency analysis are outside the inventory.
 
 Line coverage does not show whether every path through a condition was taken.
-Branch coverage is being developed separately; see the
-[branch coverage design](docs/branch-coverage-design.md). A standalone JaCoCo/TeaVM prototype now verifies
-exact JVM/browser probe parity and raw-data merging, with separate compiler reachability diagnostics.
-Run `python3 scripts/check_jacoco_teavm.py` with JDK 21, Maven and Google Chrome.
-The published Maven/Gradle adapters remain line-only while this integration is developed.
+Select the opt-in [JaCoCo mode](docs/jacoco-mode.md) for branch coverage and the
+full original-class denominator. Its Maven/Gradle adapters also emit standard raw
+execution data and compiler diagnostics. The [design notes](docs/branch-coverage-design.md)
+explain the shared identity and the separate emitted-code scope. Run
+`python3 scripts/check_jacoco_teavm.py` with JDK 21, Maven and Chrome to verify
+JVM/browser probe parity independently.
 
 Probes are inserted after TeaVM's intermediate-code optimization. They do not
 make unreachable application methods reachable. Results from the same line are
@@ -174,7 +193,8 @@ Instrumentation adds overhead and should be enabled for coverage testing only.
 
 ## Source and license
 
-The implementation uses TeaVM's public plugin SPI and intermediate-code model.
+The implementation uses TeaVM's public plugin SPI and intermediate-code model,
+and JaCoCo's public instrumentation, execution-data and reporting APIs in `jacoco` mode.
 The probe approach is informed by GWT's compiler coverage design; no GWT compiler
 code is included. The Java package is `io.instanto.teavm.coverage`; configuration
 properties use the `teavm.coverage.*` prefix.

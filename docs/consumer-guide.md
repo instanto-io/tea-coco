@@ -1,5 +1,9 @@
 # Using tea-coco in a library or application
 
+This guide describes the default `lines` mode. For original-bytecode line/branch
+coverage and exact JVM/browser merging, use the [JaCoCo mode guide](jacoco-mode.md).
+
+
 tea-coco measures Java lines executed **in the browser** after TeaVM compiles them to JavaScript.
 It does not require your GWT/browser library to run on the JVM. The JVM hosts the compiler, test orchestration
 and reporting; the browser executes the instrumented code.
