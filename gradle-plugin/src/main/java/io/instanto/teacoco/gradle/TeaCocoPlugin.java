@@ -41,6 +41,16 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                 .map(Boolean::parseBoolean)
                 .orElse(true));
     extension.getVersion().convention("0.1.0-SNAPSHOT");
+    extension.getMode().convention("lines");
+    extension
+        .getClassRoots()
+        .from(
+            project
+                .getExtensions()
+                .getByType(SourceSetContainer.class)
+                .getByName("main")
+                .getOutput()
+                .getClassesDirs());
     extension.getTestTask().convention("test");
     extension
         .getSourceRoots()
@@ -69,7 +79,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                 JavaExec.class,
                 task -> {
                   task.setGroup("verification");
-                  task.setDescription("Collect TeaVM browser coverage as Sonar generic XML");
+                  task.setDescription("Collect TeaVM browser coverage as XML");
                   task.getMainClass().set("io.instanto.teavm.coverage.CoverageReporter");
                   task.setClasspath(runtime);
                   task.onlyIf("tea-coco is enabled", ignored -> extension.getEnabled().get());
@@ -111,29 +121,92 @@ public final class TeaCocoPlugin implements Plugin<Project> {
             throw new IllegalArgumentException(
                 "teaCoco.dataDirectory must be a dedicated directory below buildDirectory");
           }
+          String mode = extension.getMode().get();
+          if (!mode.equals("lines") && !mode.equals("jacoco"))
+            throw new IllegalArgumentException("Unknown tea-coco mode: " + mode);
+          boolean jacoco = mode.equals("jacoco");
+          var prepare =
+              project
+                  .getTasks()
+                  .register(
+                      "teaCocoPrepare",
+                      JavaExec.class,
+                      task -> {
+                        task.setGroup("verification");
+                        task.setDescription("Prepare test-only JaCoCo bytecode copies");
+                        task.getMainClass().set("io.instanto.teavm.coverage.JacocoPreparer");
+                        task.setClasspath(runtime);
+                        task.dependsOn(extension.getClassRoots());
+                        task.onlyIf("JaCoCo mode is enabled", t -> jacoco);
+                        task.getOutputs().dir(extension.getDataDirectory());
+                        task.getOutputs().upToDateWhen(t -> false);
+                        task.getOutputs()
+                            .cacheIf("Coverage must prepare fresh run IDs", t -> false);
+                        task.notCompatibleWithConfigurationCache(
+                            "Coverage prepares a fresh test invocation");
+                        task.doFirst(
+                            t -> {
+                              var arguments = new ArrayList<String>();
+                              var previous = extension.getReportFile().get().getAsFile().toPath();
+                              try {
+                                Files.deleteIfExists(previous);
+                                Files.deleteIfExists(
+                                    previous.resolveSibling(previous.getFileName() + ".exec"));
+                                Files.deleteIfExists(
+                                    previous.resolveSibling("compiler-evidence.json"));
+                              } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                              }
+                              arguments.add(dataDirectory.toString());
+                              arguments.add(roots(extension));
+                              extension.getClassRoots().getFiles().stream()
+                                  .map(File::getAbsolutePath)
+                                  .sorted()
+                                  .forEach(arguments::add);
+                              task.setArgs(arguments);
+                            });
+                      });
           var tests = project.getTasks().named(extension.getTestTask().get(), Test.class);
           tests.configure(
               task -> {
                 task.notCompatibleWithConfigurationCache(
                     "Coverage snapshots belong to this browser invocation");
-                task.setClasspath(task.getClasspath().plus(runtime));
+                task.setClasspath(
+                    jacoco
+                        ? project
+                            .files(dataDirectory.resolve("jacoco/classes").toFile())
+                            .plus(task.getClasspath())
+                            .plus(runtime)
+                        : task.getClasspath().plus(runtime));
+                if (jacoco) {
+                  task.dependsOn(prepare);
+                  // This task executes prepared bytecode. JVM coverage belongs to a separate task
+                  // against original classes, whose exec files can be supplied to the reporter.
+                  var agent =
+                      task.getExtensions()
+                          .findByType(org.gradle.testing.jacoco.plugins.JacocoTaskExtension.class);
+                  if (agent != null) agent.setEnabled(false);
+                }
                 task.getReports().getJunitXml().getRequired().set(true);
                 task.getReports().getJunitXml().getIncludeSystemOutLog().set(true);
                 // Fresh compilation IDs must never be combined with a cached test execution.
                 task.getOutputs().upToDateWhen(t -> false);
                 task.getOutputs().cacheIf("Browser coverage must execute", t -> false);
-                task.getOutputs().dir(extension.getDataDirectory());
+                if (!jacoco) task.getOutputs().dir(extension.getDataDirectory());
                 task.systemProperty("teavm.coverage.enabled", "true");
+                task.systemProperty("teavm.coverage.mode", mode);
                 task.systemProperty("teavm.coverage.sourceRoots", roots(extension));
                 task.systemProperty(
                     "teavm.coverage.dataDirectory", extension.getDataDirectory().get().getAsFile());
                 task.doFirst(
                     t -> {
-                      clear(extension.getDataDirectory().get().getAsFile().toPath());
+                      if (!jacoco) clear(extension.getDataDirectory().get().getAsFile().toPath());
                       var output = extension.getReportFile().get().getAsFile().toPath();
                       try {
                         Files.deleteIfExists(output);
                         Files.deleteIfExists(output.resolveSibling("not-emitted.json"));
+                        Files.deleteIfExists(output.resolveSibling("compiler-evidence.json"));
+                        Files.deleteIfExists(output.resolveSibling(output.getFileName() + ".exec"));
                       } catch (IOException e) {
                         throw new UncheckedIOException(e);
                       }
@@ -145,6 +218,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
               task -> {
                 // A finalizer must not depend on the failed task, or Gradle skips the collection.
                 task.mustRunAfter(tests);
+                if (jacoco) task.getMainClass().set("io.instanto.teavm.coverage.JacocoReporter");
                 task.doFirst(
                     t -> {
                       var arguments = new ArrayList<String>();
@@ -161,6 +235,11 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                               .get()
                               .getAsFile()
                               .getAbsolutePath());
+                      if (jacoco)
+                        extension.getExecutionData().getFiles().stream()
+                            .map(f -> "--exec=" + f.getAbsolutePath())
+                            .sorted()
+                            .forEach(arguments::add);
                       task.setArgs(arguments);
                     });
               });
