@@ -107,7 +107,10 @@ Classes never reached by dependency analysis are outside the inventory.
 
 Line coverage does not show whether every path through a condition was taken.
 Branch coverage is being developed separately; see the
-[branch coverage design](docs/branch-coverage-design.md).
+[branch coverage design](docs/branch-coverage-design.md). A standalone JaCoCo/TeaVM prototype now verifies
+exact JVM/browser probe parity and raw-data merging, with separate compiler reachability diagnostics.
+Run `python3 scripts/check_jacoco_teavm.py` with JDK 21, Maven and Google Chrome.
+The published Maven/Gradle adapters remain line-only while this integration is developed.
 
 Probes are inserted after TeaVM's intermediate-code optimization. They do not
 make unreachable application methods reachable. Results from the same line are

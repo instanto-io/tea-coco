@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.instanto.research</groupId><artifactId>jacoco-teavm-prototype</artifactId><version>0.1.0-SNAPSHOT</version>
+  <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><maven.deploy.skip>true</maven.deploy.skip></properties>
+  <dependencies>
+    <dependency><groupId>org.teavm</groupId><artifactId>teavm-jso</artifactId><version>0.16.0</version></dependency>
+    <dependency><groupId>org.teavm</groupId><artifactId>teavm-tooling</artifactId><version>0.16.0</version><scope>test</scope></dependency>
+    <dependency><groupId>org.teavm</groupId><artifactId>teavm-classlib</artifactId><version>0.16.0</version><scope>test</scope></dependency>
+    <dependency><groupId>org.teavm</groupId><artifactId>teavm-jso-impl</artifactId><version>0.16.0</version><scope>test</scope></dependency>
+    <dependency><groupId>org.jacoco</groupId><artifactId>org.jacoco.core</artifactId><version>0.8.15</version><scope>test</scope></dependency>
+    <dependency><groupId>org.jacoco</groupId><artifactId>org.jacoco.report</artifactId><version>0.8.15</version><scope>test</scope></dependency>
+    <dependency><groupId>com.microsoft.playwright</groupId><artifactId>playwright</artifactId><version>1.56.0</version><scope>test</scope></dependency>
+    <dependency><groupId>junit</groupId><artifactId>junit</artifactId><version>4.13.2</version><scope>test</scope></dependency>
+  </dependencies>
+  <build><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.4</version></plugin>
+    <plugin><groupId>org.codehaus.mojo</groupId><artifactId>build-helper-maven-plugin</artifactId><version>3.6.1</version><executions><execution><id>shared-reference</id><phase>generate-sources</phase><goals><goal>add-source</goal></goals><configuration><sources><source>${project.basedir}/../jacoco-branch-reference/src/main/java</source></sources></configuration></execution></executions></plugin>
+  </plugins></build>
+</project>

@@ -1,11 +1,98 @@
 # Branch coverage: JaCoCo reference and tea-coco contract
 
-Status: **analysis and executable reference tests; branch instrumentation is not yet implemented in tea-coco**.
+Status: **JaCoCo/browser probe parity and exact raw-data merging verified in a standalone prototype; production adapters remain line-only**.
 Recorded 2026-10-25. Reference tools: JaCoCo **0.8.15**, javac **21** with `--release 17`, TeaVM **0.16.0**.
 JaCoCo 0.8.15 matches the version configured in the Instanto parent POM. The live JaCoCo documentation describes
 its current development version, so the experiments and source inspection below pin 0.8.15 explicitly.
 
-## Decision
+## Design correction: reuse the original bytecode model
+
+Updated 2026-10-26 after reviewing the common input to JaCoCo and TeaVM. **Yes: JaCoCo can analyze the same original
+class files to establish branch counts and control flow.** Counting those branches does not require recovering them
+from optimized JavaScript or TeaVM IR. The remaining problem is obtaining execution evidence with the same identity.
+
+The standalone experiment now reuses JaCoCo's instrumentation as well as its analyzer:
+
+1. Keep the original selected class files as the reporting baseline.
+2. Instrument compiler-input copies with JaCoCo 0.8.15's public `Instrumenter`, using a custom
+   `IExecutionDataAccessorGenerator` to obtain a tea-coco-managed boolean probe array for each original class ID.
+3. Compile those copies with stock TeaVM and collect the probe arrays from browser tests through tea-coco.
+4. Feed the collected class IDs and probe bits into JaCoCo's execution-data/analyzer APIs, using the original files
+   for reporting. Let JaCoCo apply its compiler filters and infer line/branch coverage from the probes.
+5. Where JVM and browser runs use identical original class bytes and compatible instrumentation, merge their raw
+   probe data before generating one report for Sonar. Do not attempt this union from per-line XML counts.
+
+The prototype is verified on stock TeaVM 0.16.0 and real Chrome, using JaCoCo 0.8.15 and Java 17 class files.
+JaCoCo's Java 11+ `ConstantDynamic` probe-array lookup is not accepted by TeaVM's `visitLdcInsn` parser. The small
+`ProbeAccessAdapter` lowers only the recognized JaCoCo-generated lookup into an ordinary static method call; the
+portable runtime returns the same boolean array for each original class ID. Probe placement and numbering remain
+JaCoCo's. The unadapted offline instrumentation also executes on the JVM, and its probe bits match both the standard
+JaCoCo agent and the adapted browser build exactly. No TeaVM fork, source-map setting or application annotation is used.
+
+This is **a verified experiment, not a released Maven/Gradle or TeaVMTestRunner integration**. Interface initialization,
+multiple browser realms, asynchronous/failing tests, application scale, and packaging still need validation in this mode.
+Generated or transformed application classes also need a clearly defined baseline; matching source files alone do not
+establish matching class identities.
+
+This mode measures the original selected Java bytecode. A never-emitted method still contributes missed coverage to
+that baseline; it may additionally be identified as omitted using compiler evidence. Probe writes can affect optimization,
+so the instrumented build must not be used as proof of the uninstrumented production build's retained code. An emitted-code
+view remains a separate useful diagnostic. Neither its denominator nor its branch identities should be silently mixed
+with the original-bytecode metric.
+
+The earlier emitted-IR design below remains a possible separate view. The successful common-probe experiment makes
+JaCoCo the preferred accounting implementation; there is no need to reimplement its compiler filters or infer original
+branch identity from emitted graphs. Debug line information in the class files supplies Java source
+locations for JaCoCo reporting; JavaScript source maps are not the branch-identity mechanism for this route.
+
+Sources: [offline instrumentation](https://www.jacoco.org/jacoco/trunk/doc/offline.html),
+[Instrumenter 0.8.15](https://github.com/jacoco/jacoco/blob/v0.8.15/org.jacoco.core/src/org/jacoco/core/instr/Instrumenter.java),
+[runtime accessor SPI 0.8.15](https://github.com/jacoco/jacoco/blob/v0.8.15/org.jacoco.core/src/org/jacoco/core/runtime/IExecutionDataAccessorGenerator.java),
+[probe storage selection 0.8.15](https://github.com/jacoco/jacoco/blob/v0.8.15/org.jacoco.core/src/org/jacoco/core/internal/instr/ProbeArrayStrategyFactory.java).
+
+## Run the browser experiment
+
+With JDK 21, Maven and Google Chrome installed:
+
+```sh
+python3 scripts/check_jacoco_teavm.py
+```
+
+The script first runs the genuine JaCoCo-agent oracle, then compiles the **same fixture source** in the independent
+`research/jacoco-teavm-prototype` module. It compares complete per-class probe arrays (not just counts) for A, B and
+UNION across the agent, custom JVM runtime and browser. It runs TeaVM SIMPLE, ADVANCED and FULL optimization, with
+FULL also minified, and verifies that JVM A plus browser B equals UNION. The short-circuit, loop, shared-switch,
+fall-through, colliding-string-switch and exception cases use the existing reference inputs.
+
+Outputs under `research/jacoco-teavm-prototype/target/proof/` include ordinary JaCoCo `.exec` and XML files. Therefore
+Sonar can import a merged report through its existing JaCoCo importer; no new Sonar format is needed for this approach.
+A live Sonar import/gate calculation has not yet been performed for this prototype.
+
+### Compiler evidence and the execution denominator
+
+The experiment separately compiles an **uninstrumented** application at each optimization level. It records:
+
+* `reachability.tsv`: original method/source-line inventory joined to TeaVM's dependency analysis. An absent method
+  is marked `unreachable-by-dependency-analysis`. Inlining is not inferred from method absence in generated JavaScript.
+* `emission.tsv`: source locations and inline call sites observed by a read-only listener on post-optimization IR at
+  JavaScript rendering. These are source-location observations, not a complete original-instruction/branch mapping.
+* `*-coverage-and-emission.json`: original JaCoCo coverage with compiler evidence per line, plus a separate
+  reachable-bytecode diagnostic excluding only lines owned entirely by unreachable methods. Shared lines are retained.
+
+All three optimization levels give the same measured result for this fixture:
+
+| View | Covered lines | Covered branches |
+| --- | ---: | ---: |
+| Original bytecode, browser UNION or merged JVM A/browser B | 31 / 32 | 23 / 25 |
+| Reachable-bytecode diagnostic, excluding the proven unreachable method | 31 / 31 | 23 / 23 |
+
+The missing original line and two outcomes belong to `Decisions.unreachable`. They remain missed in the ordinary
+JaCoCo XML; the diagnostic does not change Sonar's denominator. Other lines with no emitted source location are
+explicitly marked `no-emitted-location-not-proof-of-removal`, because an optimizer can move/fold instructions and
+line mappings can be incomplete. Exact elimination of individual outcomes within a retained method is **not yet
+established** by this evidence. The reachable-bytecode diagnostic is not claimed to be exact emitted-code coverage.
+
+## Coverage semantics
 
 Implement **C1 branch coverage** alongside line coverage. Count normal decision outcomes, preserve branch identity
 until aggregation, and export Sonar's branch fields only from a coherent branch inventory. Do not equate a line hit,
@@ -18,9 +105,10 @@ Two scopes must remain distinguishable:
 * **Emitted TeaVM build scope:** the application decisions retained in a particular compiled build. Branches removed
   by optimization are separate diagnostics, not evidence that a test covered them.
 
-The user-selected goal is meaningful coverage of emitted code. That percentage must not be presented as identical
-to JaCoCo's original-bytecode percentage. A future exact cross-runtime merge requires provenance mapping and an
-explicit common denominator. Missing provenance must be visible rather than inferred from a source line number.
+Meaningful coverage of emitted code and comparison with JVM coverage are distinct goals. Their percentages must not
+be presented as identical. An exact cross-runtime merge requires either common original-bytecode probes or proven
+provenance mapping, plus an explicit common denominator. Missing provenance must be visible rather than inferred
+from a source line number.
 
 ## What JaCoCo actually counts
 
@@ -149,7 +237,7 @@ Sources: [generic coverage schema](https://docs.sonarsource.com/sonarqube-server
 [scanner storage, pinned public source](https://github.com/SonarSource/sonarqube/blob/9.9.0.65466/sonar-scanner-engine/src/main/java/org/sonar/scanner/sensor/DefaultSensorStorage.java),
 [JaCoCo report importer](https://github.com/SonarSource/sonar-jacoco/blob/master/src/main/java/org/sonar/plugins/jacoco/ReportImporter.java).
 
-## Proposed tea-coco implementation
+## Earlier emitted-IR design (separate coverage scope, not the primary implementation)
 
 ### Inventory and identity
 
@@ -164,9 +252,10 @@ the graph/provenance matches; do not sum ordinary/minified/optimized compilation
 
 TeaVM 0.16.0's public `TextLocation` exposes file, line and inlining information, but no original bytecode instruction
 offset. Exact JaCoCo-compatible provenance through optimization is therefore **not established by the current SPI**.
-A method/line/ordinal heuristic is insufficient. Investigate a supported provenance hook upstream; retain standalone
-emitted-graph coverage while that mapping is developed. Do not insert side-effecting pre-optimization probes merely
-to preserve branches that the real application would otherwise eliminate.
+A method/line/ordinal heuristic is insufficient. For this emitted-code scope, investigate a supported provenance hook
+upstream. For the original-bytecode scope, evaluate JaCoCo probes before TeaVM compilation as described above; that
+route can preserve common probe identity without recovering it from transformed graphs. Keep any effect of those
+probes on optimization explicit rather than treating this as a measurement of uninstrumented emitted code.
 
 ### Edge instrumentation
 
