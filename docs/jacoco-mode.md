@@ -122,7 +122,7 @@ failures or run `prepare` again before this report: preparation starts a new run
 ## Gradle
 
 Add the plugin alongside the existing TeaVM library/application plugin, using the
-[snapshot repository configuration](gradle.md#resolve-internal-snapshots):
+[local snapshot configuration](gradle.md#use-a-locally-built-snapshot):
 
 ```kotlin
 plugins {

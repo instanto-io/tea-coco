@@ -30,7 +30,7 @@ Native JavaScript bodies and generated intrinsic internals are outside Java line
 
 ## Opt-in Maven profile
 
-First configure [the internal registry](internal-publishing.md) or install the artifacts locally. Add this profile
+First [build and install the alpha artifacts locally](building.md). Add this profile
 in the module that owns the browser tests. Retain its existing TeaVM dependencies, browser selection, test includes,
 JVM arguments and Surefire/Failsafe configuration; this profile adds coverage settings only.
 
@@ -165,4 +165,4 @@ according to its own scope; tea-coco does not alter exclusions or quality gates.
 | Unknown build ID / probe mismatch | Results and baselines came from different builds, or stale directories were combined. Clean and rerun together. |
 | Missing/ambiguous source | Supply the exact matching source checkout and unique package-relative paths. |
 | No coverage for dependency code | Add its matching source roots and make sure the tested application actually reaches the code. |
-| Registry 401/403 | The CI repository needs access to the package credentials; this is not a compiler/test failure. |
+| Snapshot artifact not found | Build and install the matching tea-coco version locally before running the consumer build. |

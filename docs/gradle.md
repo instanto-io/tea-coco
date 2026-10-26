@@ -5,24 +5,19 @@ The implementation artifact is `io.instanto:tea-coco-gradle-plugin`; its plugin 
 It works with TeaVM's `org.teavm.library` and `org.teavm` plugins, using their existing JUnit `Test` tasks.
 It does not replace TeaVM's compiler, runner, browser selection or dependency versions.
 
-## Resolve internal snapshots
+## Use a locally built snapshot
 
-Add the authenticated registry to **both** plugin management and normal dependency resolution. The plugin marker
-is resolved during settings evaluation; `tea-coco` itself is resolved for the test and report tasks later.
+The current alpha can be [built and installed locally](#build-locally). Maven Central
+publication is planned. Add `mavenLocal()` to both plugin management and normal
+dependency resolution. The plugin marker is resolved during settings evaluation;
+`tea-coco` itself is resolved for the test and report tasks later.
 
 In `settings.gradle.kts`:
 
 ```kotlin
 pluginManagement {
     repositories {
-        maven {
-            url = uri("https://packages.instanto.io/api/packages/instanto-io/maven")
-            credentials {
-                username = System.getenv("FORGEJO_PACKAGE_USER")
-                password = System.getenv("FORGEJO_PACKAGE_TOKEN")
-            }
-            content { includeGroupByRegex("io\\.instanto.*") }
-        }
+        mavenLocal()
         gradlePluginPortal()
         mavenCentral()
     }
@@ -38,14 +33,7 @@ plugins {
     id("io.instanto.tea-coco") version "0.1.0-SNAPSHOT"
 }
 repositories {
-    maven {
-        url = uri("https://packages.instanto.io/api/packages/instanto-io/maven")
-        credentials {
-            username = System.getenv("FORGEJO_PACKAGE_USER")
-            password = System.getenv("FORGEJO_PACKAGE_TOKEN")
-        }
-        content { includeGroupByRegex("io\\.instanto.*") }
-    }
+    mavenLocal()
     mavenCentral()
 }
 dependencies {
@@ -125,6 +113,6 @@ python3 scripts/smoke_gradle_consumer.py
 python3 scripts/smoke_jacoco_gradle_consumer.py
 ```
 
-For local development, use `mavenLocal()` in both repository blocks instead of the authenticated registry.
+These commands install the snapshot artifacts used by the `mavenLocal()` examples above.
 The Gradle wrapper is included; the core compiler extension and Maven reporter are built by the Maven reactor.
 The Gradle adapter is built by the separate Gradle build in the same repository.

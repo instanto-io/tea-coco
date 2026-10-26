@@ -8,7 +8,7 @@ line and branch coverage and exact raw JVM/browser probe merging.
 **Alpha — `0.1.0-SNAPSHOT`.** The extension targets **TeaVM 0.16.0** and is intended
 for evaluation in coverage test builds. It works with the stock TeaVM compiler
 and `TeaVMTestRunner`. Maven Central publication is planned; the current snapshot
-can be installed from source.
+can be [built and installed from source](docs/building.md).
 
 ## What is implemented
 
