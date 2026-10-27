@@ -34,7 +34,7 @@ jobs:
         run: |
           mvn -B -ntp -s central-settings.xml -f jacoco-example/pom.xml \
             org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar \
-            -Dsonar.projectKey=tea-coco-jacoco-pilot \
+            -Dsonar.projectKey=teacoco-jacoco-pilot \
             '-Dsonar.projectName=TeaCoCo coverage pilot' \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/teavm-coverage.xml
       - name: Verify imported counters, coverage calculation and gate status
@@ -45,7 +45,7 @@ jobs:
         run: |
           cat >> "$GITHUB_STEP_SUMMARY" <<'SUMMARY'
           Analysis was submitted. Verify the processed counters and quality gate in the
-          [Sonar pilot dashboard](https://sonar.instanto.io/dashboard?id=tea-coco-jacoco-pilot).
+          [Sonar pilot dashboard](https://sonar.instanto.io/dashboard?id=teacoco-jacoco-pilot).
 
           API readback was not requested. A successful workflow confirms build and analysis
           submission; it does not assert server-side coverage counters or quality gate status.

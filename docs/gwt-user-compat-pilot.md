@@ -49,10 +49,10 @@ Install this TeaCoCo revision with `mvn clean install` first. Export the pinned
 teavm-compat revision to a new directory (do not reuse a working checkout):
 
 ```sh
-mkdir /tmp/tea-coco-gwt-reproduction
+mkdir /tmp/teacoco-gwt-reproduction
 git -C /path/to/teavm-compat archive dfacf75d646ead076bf3de6297e43e6cc3a9b281 \
-  | tar -x -C /tmp/tea-coco-gwt-reproduction
-cd /tmp/tea-coco-gwt-reproduction
+  | tar -x -C /tmp/teacoco-gwt-reproduction
+cd /tmp/teacoco-gwt-reproduction
 mvn -B -ntp -pl gwt-user-compat-tests -am test -Dteavm.coverage.enabled=false
 mkdir -p pilot-evidence/baseline
 cp gwt-user-compat-tests/target/jacoco.exec pilot-evidence/baseline/jvm.exec
@@ -60,10 +60,10 @@ mvn -B -ntp -pl gwt-user-compat org.jacoco:jacoco-maven-plugin:0.8.15:report \
   -Djacoco.dataFile="$PWD/pilot-evidence/baseline/jvm.exec"
 cp gwt-user-compat/target/site/jacoco/jacoco.xml pilot-evidence/baseline/jacoco.xml
 
-git apply /path/to/tea-coco/docs/gwt-user-compat-pilot.patch
+git apply /path/to/teacoco/docs/gwt-user-compat-pilot.patch
 mvn -B -ntp -pl gwt-user-compat-tests -am test -Djacoco.skip=true
 mvn -B -ntp -pl gwt-user-compat-tests \
-  io.instanto:tea-coco-maven-plugin:0.1.0-SNAPSHOT:report
+  io.instanto:teacoco-maven-plugin:0.1.0-SNAPSHOT:report
 ```
 
 Use the normal authenticated Instanto Maven settings and the pinned project's
@@ -75,7 +75,7 @@ and its source root, and preserves the baseline `.exec` for merging.
 
 Read `gwt-user-compat-tests/target/teavm-coverage.xml`, its `.exec` sibling and
 `target/compiler-evidence.json`. For a plain timing pass after applying the patch,
-add `-Dtea-coco.mode=lines -Dteavm.coverage.enabled=false` and set
+add `-Dteacoco.skip=true -Dteavm.coverage.enabled=false` and set
 `-Dpilot.classesDirectory` to the test module's absolute `target/classes` path;
 do not run the coverage report for that plain pass. Delete only
 `gwt-user-compat-tests/target/teavm-tests` before each timing run.

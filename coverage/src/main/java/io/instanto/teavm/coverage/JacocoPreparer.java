@@ -56,7 +56,7 @@ public final class JacocoPreparer {
       throws IOException {
     output = data.toAbsolutePath().normalize().resolve("jacoco");
     if (Files.exists(output)) {
-      if (!Files.isRegularFile(output.resolve(".tea-coco-owned"))) {
+      if (!Files.isRegularFile(output.resolve(".teacoco-owned"))) {
         throw new IOException("Refusing to replace unowned output directory " + output);
       }
       // Even a failed preparation invalidates the previous run. Gradle finalizers or a manual
@@ -97,14 +97,14 @@ public final class JacocoPreparer {
       }
     }
     if (Files.exists(output)) {
-      if (!Files.isRegularFile(output.resolve(".tea-coco-owned")))
+      if (!Files.isRegularFile(output.resolve(".teacoco-owned")))
         throw new IOException("Refusing to replace unowned output directory " + output);
       try (var files = Files.walk(output)) {
         for (Path file : files.sorted(Comparator.reverseOrder()).toList()) Files.delete(file);
       }
     }
     Files.createDirectories(output);
-    Files.writeString(output.resolve(".tea-coco-owned"), "tea-coco JaCoCo preparation\n");
+    Files.writeString(output.resolve(".teacoco-owned"), "teacoco JaCoCo preparation\n");
     run = UUID.randomUUID().toString();
     for (var input : inputs.entrySet()) {
       String name = input.getKey();

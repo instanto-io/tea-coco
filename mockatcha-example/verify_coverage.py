@@ -26,7 +26,7 @@ class_file = 'io/instanto/mockatcha/examples/TimesheetService.class'
 original = (target / 'classes' / class_file).read_bytes()
 assert original == (target / 'teavm-coverage/jacoco/originals' / class_file).read_bytes()
 assert original != (target / 'teavm-coverage/jacoco/classes' / class_file).read_bytes()
-with zipfile.ZipFile(target / 'mockatcha-tea-coco-demo-0.1.0-SNAPSHOT.jar') as jar:
+with zipfile.ZipFile(target / 'mockatcha-teacoco-demo-0.1.0-SNAPSHOT.jar') as jar:
     assert original == jar.read(class_file), 'Published classes were instrumented'
 lines = ['# Timesheet coverage comparison', '', '| Runtime | Lines | Branch outcomes |', '| --- | ---: | ---: |']
 for name, counters in counts.items():

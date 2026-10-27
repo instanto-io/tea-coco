@@ -44,13 +44,18 @@ public final class ReportMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.compileSourceRoots}", required = true)
   private List<String> sourceRoots;
 
-  @Parameter(property = "tea-coco.mode", defaultValue = "lines")
+  @Parameter(property = "teacoco.mode", defaultValue = "jacoco")
   private String mode;
 
+  /** Additional compatible raw JaCoCo data, from JVM runs or other TeaCoCo reports. */
   @Parameter private List<File> executionData;
+
+  @Parameter(property = "teacoco.skip", defaultValue = "false")
+  private boolean skip;
 
   @Override
   public void execute() throws MojoExecutionException {
+    if (skip) return;
     try {
       if ("jacoco".equals(mode)) {
         new JacocoReporter()

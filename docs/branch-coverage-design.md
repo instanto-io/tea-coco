@@ -1,6 +1,6 @@
 # Branch coverage: JaCoCo reference and TeaCoCo contract
 
-Status: **JaCoCo/browser probe parity and raw-data merging are integrated in opt-in Maven/Gradle `jacoco` mode. The 67-test GWT pilot passes with unchanged denominators.**
+Status: **JaCoCo/browser probe parity and raw-data merging are integrated in the default Maven/Gradle `jacoco` mode. The 67-test GWT pilot passes with unchanged denominators.**
 See [consumer configuration](jacoco-mode.md) and [measured pilot results](gwt-user-compat-pilot.md).
 Recorded 2026-10-25. Reference tools: JaCoCo **0.8.15**, javac **21** with `--release 17`, TeaVM **0.16.0**.
 JaCoCo 0.8.15 matches the version configured in the Instanto parent POM. The live JaCoCo documentation describes

@@ -51,7 +51,7 @@ public class JacocoReportIT {
             original,
             Files.readAllBytes(
                 Path.of("target/teavm-coverage/jacoco/classes/example/ProbeCases.class"))));
-    try (var jar = new java.util.jar.JarFile("target/tea-coco-jacoco-example-0.1.0-SNAPSHOT.jar");
+    try (var jar = new java.util.jar.JarFile("target/teacoco-jacoco-example-0.1.0-SNAPSHOT.jar");
         var bytes = jar.getInputStream(jar.getJarEntry("example/ProbeCases.class"))) {
       assertArrayEquals(original, bytes.readAllBytes());
     }

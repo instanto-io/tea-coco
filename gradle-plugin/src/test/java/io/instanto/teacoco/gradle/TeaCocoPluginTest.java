@@ -27,7 +27,7 @@ public class TeaCocoPluginTest {
         directory.getRoot().toPath().resolve("settings.gradle"), "rootProject.name='fixture'");
     Files.writeString(
         directory.getRoot().toPath().resolve("build.gradle"),
-        "plugins { id 'io.instanto.tea-coco' }\n" + configuration);
+        "plugins { id 'io.instanto.teacoco' }\n" + configuration);
     return GradleRunner.create().withProjectDir(directory.getRoot()).withPluginClasspath();
   }
 
@@ -54,7 +54,7 @@ public class TeaCocoPluginTest {
     Files.writeString(
         directory.getRoot().toPath().resolve("build.gradle.kts"),
         """
-        plugins { id("io.instanto.tea-coco") }
+        plugins { id("io.instanto.teacoco") }
         teaCoco {
             enabled.set(false)
             testTask.set("test")

@@ -32,6 +32,7 @@ public class FailureCollectionIT {
     System.setProperty("teavm.junit.optimized", "false");
     System.setProperty("teavm.junit.js.runner", "browser-chrome");
     System.setProperty("teavm.coverage.enabled", "true");
+    System.setProperty("teavm.coverage.mode", "lines");
     System.setProperty(
         "teavm.coverage.sourceRoots", Path.of("src/main/java").toAbsolutePath().toString());
     System.setProperty(

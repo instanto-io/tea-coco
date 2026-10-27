@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: tea-coco-${{ github.ref }}
+  group: teacoco-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   verify:
@@ -45,7 +45,7 @@ jobs:
       FORGEJO_PACKAGE_TOKEN: ${{ secrets.FORGEJO_PACKAGE_TOKEN || secrets.FORGEJO_PACKAGES_TOKEN }}
     steps:
       - name: Allocate job-local Gradle cache
-        run: echo "GRADLE_USER_HOME=$RUNNER_TEMP/tea-coco-gradle-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
+        run: echo "GRADLE_USER_HOME=$RUNNER_TEMP/teacoco-gradle-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
@@ -62,24 +62,24 @@ jobs:
           # Both adapters and consumers were verified at this workflow's checkout.
           # Keep deployments out of the shared runner's persistent Maven cache.
           mvn -B -ntp -s .github/maven-settings.xml \
-            -Dmaven.repo.local="$RUNNER_TEMP/tea-coco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
+            -Dmaven.repo.local="$RUNNER_TEMP/teacoco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
             -pl coverage,maven-plugin -am clean deploy -DskipTests
           ./gradlew --no-daemon publish
       - name: Verify published Maven and Gradle snapshots from fresh caches
         run: |
           set -euo pipefail
           python3 scripts/smoke_consumer.py --settings .github/maven-settings.xml \
-            --local-repository "$RUNNER_TEMP/tea-coco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
+            --local-repository "$RUNNER_TEMP/teacoco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
           python3 scripts/smoke_consumer.py --jacoco --settings .github/maven-settings.xml \
-            --local-repository "$RUNNER_TEMP/tea-coco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
+            --local-repository "$RUNNER_TEMP/teacoco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
           python3 scripts/smoke_gradle_consumer.py --published
           python3 scripts/smoke_jacoco_gradle_consumer.py --published
       - name: Clean job-local package caches
         if: always()
         run: |
           rm -rf -- "$GRADLE_USER_HOME" \
-            "$RUNNER_TEMP/tea-coco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
-            "$RUNNER_TEMP/tea-coco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
+            "$RUNNER_TEMP/teacoco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
+            "$RUNNER_TEMP/teacoco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
   mockatcha-example:
     needs: publish-snapshot
     runs-on: [self-hosted, instanto-container]

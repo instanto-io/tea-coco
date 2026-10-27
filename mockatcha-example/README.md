@@ -1,172 +1,217 @@
-# Mockatcha + TeaVMTestRunner + TeaCoCo
+# Testing a timesheet service with Mockatcha and TeaCoCo
 
-A standalone Maven project using the existing Mockatcha **timesheet example**.
-It combines ordinary Mockatcha mocks, mockatcha-bdd stubbing/call logs/matchers,
-stock TeaVMTestRunner browser execution and TeaCoCo line/branch coverage.
-No organisation parent or patched TeaVM runner is required by this project.
+This example tests a small Java service in two places: on the JVM and in a
+browser. Mockatcha lets each test choose the data the service receives and check
+what it asks other components to do. JaCoCo measures the JVM tests; TeaCoCo
+measures the browser tests and brings both results into one coverage report.
 
-This example lives in [tea-coco/mockatcha-example](https://github.com/instanto-io/tea-coco/tree/main/mockatcha-example).
-It consumes Mockatcha and mockatcha-bdd as external dependencies; it does not need
-a dedicated example repository or a parent relationship with TeaCoCo.
-Application classes are copied, with their Apache-2.0 notices, from
-[Mockatcha's examples at 4357c2b](https://github.com/instanto-io/mockatcha/tree/4357c2b3a122ca12b6b2a15ff20267d11276ee62/mockatcha-examples).
-The tests here add a deliberately complementary JVM/browser coverage exercise.
+Start with the tests, then look at [pom.xml](pom.xml) to see how Maven runs them.
+You can use the same arrangement in your own project without changing your
+application code to support coverage.
 
-## Run
+## Run the example
 
-Use JDK 21, Maven and Chrome. With the snapshot dependencies already installed
-locally, run:
+You need JDK 21, Maven and Chrome/Chromium. Install the TeaCoCo and Mockatcha
+snapshot dependencies locally, following their build instructions, then run
+this command from the `mockatcha-example` directory:
 
 ```sh
 mvn clean verify
-python3 verify_coverage.py
 ```
 
-For Instanto snapshot consumption, use the included `settings.xml`. Provide
-`FORGEJO_PACKAGE_USER` and `FORGEJO_PACKAGE_TOKEN` through your environment or CI
-secrets, then run `mvn -s settings.xml -U clean verify`. These resolve the existing
-Mockatcha and TeaCoCo libraries; this project does not publish a library artifact.
-The source libraries can also be built locally following their own setup guides.
+This runs the tests and generates the coverage reports. No Python is required.
+For TeaCoCo installation, see [building from source](../docs/building.md).
+If you use the Instanto snapshot registry instead, the included `settings.xml`
+reads `FORGEJO_PACKAGE_USER` and `FORGEJO_PACKAGE_TOKEN` from your environment;
+run `mvn -s settings.xml -U clean verify` with those credentials configured.
 
-## Read the example
+## What the service should do
 
-1. `TimesheetService` asks the repository for a draft, submits it, and requests
-   approval when hours exceed 40. Missing drafts fail before submission.
-2. `TimesheetJvmTest` uses Mockatcha on the JVM to exercise the missing-draft path.
-3. `TimesheetCoreBrowserIT` uses core `mock`, `when`, `verify` and argument matchers
-   for ordinary and boundary-hour weeks, compiled by TeaVM into browser tests.
-4. `TimesheetBddBrowserIT` uses mockatcha-bdd `spyOn`, `calls` and `stringContaining`
-   for overtime and a concrete repository spy. Real storage behavior is retained
-   while the draft lookup is overridden.
-5. `verify_coverage.py` proves the raw JVM/browser union improves both line and
-   branch coverage and that packaged application classes retain their original bytes.
+[TimesheetService](src/main/java/io/instanto/mockatcha/examples/TimesheetService.java)
+receives an employee ID and asks a repository for that employee's draft timesheet.
+Its rules are small enough to read alongside the tests:
 
-The browser classes use `@SkipJVM` and `@After` cleanup. They deliberately avoid
-`@Rule` so they work with stock TeaVMTestRunner, without Instanto's rule extension.
-This does not prevent applications from using that extension where desired.
-Each browser scenario runs in ordinary, optimized and minified JavaScript modes.
-The mocks are test collaborators; TeaCoCo measures only `src/main/java` application
-classes, not mock implementations or the testing libraries.
+- A missing draft is an error. There is nothing to submit.
+- A draft is marked as submitted, regardless of how many hours it contains.
+- More than 40 hours requires a review. Exactly 40 hours does not.
 
-## How JaCoCo and TeaCoCo map to test runners
+The service takes a repository and an approval gateway in its constructor. Tests
+can therefore supply mocks instead of a database or an external approval service.
+The service itself is real Java code throughout these tests.
 
-Maven's **Surefire and Failsafe** plugins select and launch tests. **JUnit 4 and
-TeaVMTestRunner** decide where those tests execute. **JaCoCo and TeaCoCo** collect
-coverage; neither replaces the test runner. Mockatcha and mockatcha-bdd supply the
-mocks and assertions inside those tests, independently of coverage collection.
+## Read the tests
 
-| Test selection in this POM | Maven launcher | JUnit runner and execution | Coverage mechanism |
-| --- | --- | --- | --- |
-| `**/*JvmTest.java` | Surefire, `test` phase | Ordinary JUnit 4, JVM | JaCoCo JVM agent records original application classes into `target/jacoco.exec` |
-| `**/*BrowserIT.java` | Failsafe, `integration-test` phase | `@RunWith(TeaVMTestRunner.class)` compiles to JavaScript and runs in Chrome; `@SkipJVM` prevents the runner's JVM execution | TeaCoCo prepares JaCoCo-compatible probes in test-only class copies, collects browser hits, and reports against preserved originals |
+| Test class | Runs in | What it checks |
+| --- | --- | --- |
+| [TimesheetJvmTest](src/test/java/io/instanto/mockatcha/examples/TimesheetJvmTest.java) | JVM | A missing draft raises an error before submission. |
+| [TimesheetCoreBrowserIT](src/test/java/io/instanto/mockatcha/examples/TimesheetCoreBrowserIT.java) | Chromium | A 38-hour week is submitted without review; 40 hours is still below the review threshold. |
+| [TimesheetBddBrowserIT](src/test/java/io/instanto/mockatcha/examples/TimesheetBddBrowserIT.java) | Chromium | A 46-hour week sends the employee ID and hours for review; a repository spy still records a real submission. |
 
-```mermaid
-flowchart LR
-  A[Original application bytecode] --> J[JUnit on JVM + JaCoCo agent]
-  A --> P[TeaCoCo test-only overlay]
-  P --> T[TeaVMTestRunner: compile and run in Chrome]
-  J --> E[JVM .exec probes]
-  T --> B[Browser probe snapshots]
-  E --> M[Merge matching raw probe identities]
-  B --> M
-  M --> X[One JaCoCo XML report for Sonar]
+The split is deliberate: the JVM test checks the missing-draft case, while the
+browser tests check successful submissions. Neither group exercises all the
+service's decisions alone. That makes it easy to see what the combined coverage
+report adds. In a real project, choose the execution environment each test needs;
+you do not have to divide your cases in this particular way.
+
+### An ordinary week: set up, submit, check
+
+The first browser test uses Mockatcha's core API. It creates two mocks and tells
+the repository what to return for employee `A-17`:
+
+```java
+TimesheetRepository repository = mock(TimesheetRepository.class);
+ApprovalGateway approvals = mock(ApprovalGateway.class);
+when(repository.findDraft("A-17")).thenReturn(new Timesheet("A-17", 38));
+
+Submission result = new TimesheetService(repository, approvals).submit("A-17");
+
+assertEquals(38, result.hours());
+assertFalse(result.reviewRequired());
+verify(repository).markSubmitted("A-17");
+verify(approvals, never()).requestReview(anyString(), anyInt());
 ```
 
-The build order in [pom.xml](pom.xml) is deliberate:
+The assertions check the returned result. The `verify` calls check the service's
+requests to its collaborators: it must save the submission, and it must not ask
+for a review. The second test uses 40 hours to check the boundary explicitly,
+rather than relying only on an ordinary 38-hour example.
 
-1. JaCoCo `prepare-agent` populates `jvmCoverageArgs`. Only Surefire uses
-   `<argLine>@{jvmCoverageArgs}</argLine>`, so the JVM test has the standard agent.
-2. Maven compiles the application with line debug information, runs the JVM test,
-   and packages its ordinary application JAR.
-3. TeaCoCo `prepare`, bound to `pre-integration-test`, preserves those exact class
-   bytes and creates `target/teavm-coverage/jacoco/classes`. This ordering prevents
-   instrumented copies from entering the application JAR.
-4. Failsafe uses that directory as `classesDirectory`. Its empty `argLine` keeps
-   the JVM agent away from the already instrumented copies. The coverage-enabled
-   TeaVM compilation loads TeaCoCo from the test classpath; no runner fork or
-   custom `@RunWith` class is needed.
-5. Stock TeaVMTestRunner runs the browser tests and captures output. TeaCoCo
-   flushes probe snapshots when the stock test entry point completes or raises an
-   error. Keep the Failsafe XML reports and their captured output: the reporter
-   consumes them. Asynchronous test work must be awaited before the test ends.
-6. At `verify`, JaCoCo writes its JVM-only report. TeaCoCo writes a browser-only
-   report, then a merged report using `<executionData>` pointing at `jacoco.exec`.
-   Failsafe's final `verify` still fails the build if any browser test failed.
+### Overtime: check the review request
 
-TeaCoCo uses JaCoCo's original class IDs and probe indices for the union. A hit
-from either runtime covers that probe; overlapping hits count once. The same
-JaCoCo analyzer then calculates line and branch counters from the original class
-files. It does not add XML percentages or infer a covered branch from a hit on the
-same source line. Recompile and collect both sides together with `clean verify`;
-raw data from changed class versions cannot safely be merged.
+The BDD test uses Mockatcha's alternative `spyOn` and `calls` API to describe the
+same sort of setup and checks. It returns a 46-hour draft, submits it, then checks
+that the approval gateway was called once with `A-17` and `46`.
 
-### Applying this layout to another library or application
+Its second test introduces a **spy around a real in-memory repository**. Only
+`findDraft` is replaced; the other methods keep their real behavior:
 
-- Keep application Java sources and compiled classes available, including line
-  debug metadata. This example instruments its own `src/main/java` classes; the
-  Mockatcha dependencies remain outside the measured application scope.
-- Add `tea-coco` as a test dependency and `tea-coco-maven-plugin` for preparation
-  and reporting. Retain `teavm-junit` and the other TeaVM test dependencies shown
-  in this POM. Use compatible versions of the plugin and runtime.
-- Separate JVM and browser test selection explicitly. The `JvmTest`/`BrowserIT`
-  suffixes are this example's convention, not a TeaCoCo requirement. Existing
-  Surefire-based browser suites can stay on Surefire if their preparation phase,
-  classpath and agent configuration are arranged accordingly.
-- Keep the normal agent on JVM tests and off the browser compilation's prepared
-  classes. Preserve report output until after the merge.
-- For a test-only project measuring a separately packaged library, select that
-  artifact with `dependencyIncludes` and supply its `sourceRoots`, as explained in
-  the [JaCoCo mode guide](../docs/jacoco-mode.md). Do not include mock libraries just
-  because they are dependencies of the tests.
-- Import the **single merged XML** for these sources into Sonar. Other modules can
-  retain their own JaCoCo reports; avoid importing overlapping browser generic
-  coverage or a second JVM-only XML for this same scope.
+```java
+InMemoryTimesheetRepository real = new InMemoryTimesheetRepository();
+real.addDraft(new Timesheet("A-17", 38));
+InMemoryTimesheetRepository repository = spy(InMemoryTimesheetRepository.class, real);
+ApprovalGateway approvals = mock(ApprovalGateway.class);
+spyOn(repository, "findDraft").withArgs("A-17").andReturn(new Timesheet("A-17", 46));
 
-For a custom browser harness, automatic stock-runner flushing does not apply:
-flush on successful and failed completion with the prepared run ID and preserve
-captured probe output. See [custom harnesses](../docs/jacoco-mode.md#custom-harnesses-and-implementation-boundary).
-This example demonstrates TeaVM's JavaScript backend with JUnit 4, not JUnit 5,
-WebAssembly or arbitrary browser runners. Gradle integration is documented in the
-[same guide](../docs/jacoco-mode.md#gradle); the Maven phase split here illustrates
-responsibilities rather than imposing Maven on the coverage runtime.
+new TimesheetService(repository, approvals).submit("A-17");
 
-## Expected result
+assertEquals(List.of("A-17"), real.submitted());
+assertEquals(List.of("A-17", 46), calls(approvals, "requestReview").mostRecent().arguments());
+```
 
-| Runtime | Lines | Branch outcomes |
-| --- | ---: | ---: |
-| JVM | 7 / 29 | 1 / 6 |
-| Browser | 27 / 29 | 5 / 6 |
-| Merged | 28 / 29 | 6 / 6 |
+This checks two things together: the supplied draft triggers an overtime review,
+and the real repository still records the submission. Use a mock when you want
+to control a collaborator completely; use a spy when retaining some real behavior
+helps the test.
 
-The remaining missed application line is not hidden. The browser's five outcomes
-and the JVM's one outcome are complementary, so identity-aware merging reaches
-six. Importing two XML count summaries would not establish that union.
+Each test class releases its mocks in an `@After` method. The browser classes also
+have `@RunWith(TeaVMTestRunner.class)` and `@SkipJVM`: they run through TeaVM in the
+browser, rather than being run a second time on the JVM. The POM exercises their
+ordinary, optimized and minified JavaScript builds.
 
-Surefire runs the JVM test against original classes with JaCoCo's JVM agent.
-TeaCoCo then prepares an overlay in `pre-integration-test`; Failsafe runs browser
-tests against it **without** the agent. The normal application JAR is already
-packaged from originals. Reports are written before Failsafe's final failure check,
-so available coverage is retained without changing a failing build into success.
+## How Maven chooses the tests and collects coverage
 
-| Output | Contents |
+The [POM](pom.xml) separates JVM and browser tests by their filenames:
+
+| Configuration | What it does |
 | --- | --- |
-| `target/site/jacoco/index.html` | JVM-only JaCoCo HTML report |
-| `target/browser-coverage.xml` | Browser-only standard JaCoCo XML |
-| `target/teavm-coverage.xml` | Merged standard JaCoCo XML for Sonar |
-| `target/teavm-coverage.xml.exec` | Matching raw merged probe data |
-| `target/compiler-evidence.json` | Instrumented-build reachability diagnostics |
-| `target/coverage-comparison.md` | Checked side-by-side totals |
+| Surefire includes `**/*JvmTest.java` | Runs the JVM tests with ordinary JaCoCo coverage. |
+| Failsafe includes `**/*BrowserIT.java` | Runs the browser tests through TeaVMTestRunner. |
+| TeaCoCo selects `testPlugin=failsafe` | Adds coverage to those browser tests, leaving the JVM test execution alone. |
 
-For Sonar, import only `target/teavm-coverage.xml` with
-`sonar.coverage.jacoco.xmlReportPaths` for these application sources. Keep any
-quality-gate changes separate. JavaScript is the supported coverage backend here;
-compiler diagnostics do not subtract omitted code from the denominator.
+The suffixes are this example's convention. When adapting the POM, change the
+includes to match your own test names so that every intended test is selected.
 
-## CI
+JaCoCo's `prepare-agent` goal supplies the JVM coverage settings through
+`jvmCoverageArgs`, which Surefire uses. TeaCoCo's `prepare` goal is scheduled just
+before the browser integration tests; its `report` goal runs after them. The
+important part of the TeaCoCo configuration is:
 
-TeaCoCo CI runs this project after publishing its verified snapshots, using an
-isolated Maven cache. The job uploads diagnostic reports to `packages.instanto.io`
-and verifies their SHA-256 on readback. It uses the organisation Forgejo package-user
-and package-write token secrets and the `instanto-container` runner. This example
-does not deploy an application JAR and is not part of the default Maven reactor,
-so the tool's normal build remains independent of Mockatcha snapshot availability.
+```xml
+<plugin>
+  <groupId>io.instanto</groupId>
+  <artifactId>teacoco-maven-plugin</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <configuration><testPlugin>failsafe</testPlugin></configuration>
+  <executions>
+    <execution>
+      <id>prepare-browser</id>
+      <phase>pre-integration-test</phase>
+      <goals><goal>prepare</goal></goals>
+    </execution>
+    <execution>
+      <id>merged-report</id>
+      <phase>verify</phase>
+      <goals><goal>report</goal></goals>
+      <configuration>
+        <executionData>
+          <file>${project.build.directory}/jacoco.exec</file>
+        </executionData>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+```
+
+Binding these goals enables coverage. JaCoCo mode is the default, and the plugin
+supplies its own runtime and browser coverage settings. There is no separate
+enable flag or additional TeaCoCo test dependency to configure.
+
+Here, `executionData` adds the results from the JVM tests to the browser results
+that TeaCoCo collects automatically. More generally, it accepts compatible
+JaCoCo `.exec` files, including earlier TeaCoCo results. For a browser-only
+report, leave it out. The full POM adds a second report execution without
+`executionData` so you can compare browser-only and combined coverage.
+
+## Find and read the reports
+
+After `mvn clean verify`, these are the useful starting points:
+
+| File | What it shows |
+| --- | --- |
+| `target/site/jacoco/index.html` | An HTML view of the JVM tests alone. |
+| `target/browser-coverage.xml` | Coverage from the browser tests alone. |
+| `target/teavm-coverage.xml` | Combined JVM and browser coverage, ready for Sonar. |
+
+To view the **combined** result as HTML, run:
+
+```sh
+mvn org.jacoco:jacoco-maven-plugin:0.8.15:report \
+  -Djacoco.dataFile=target/teavm-coverage.xml.exec
+```
+
+Then open `target/site/jacoco/index.html` again. It now shows the combined result
+instead of the earlier JVM-only result. Do not run `clean` between these commands.
+
+The example's expected results are:
+
+| Tests included | Covered Java lines | Covered branch outcomes |
+| --- | ---: | ---: |
+| JVM only | 7 / 29 | 1 / 6 |
+| Browser only | 27 / 29 | 5 / 6 |
+| Combined | 28 / 29 | 6 / 6 |
+
+A branch outcome is one side of a decision, such as finding a draft or not finding
+one. The JVM test covers an outcome the browser tests miss, so combining them
+covers all six outcomes. It does not cover every line: the remaining missed line
+is still shown. Coverage measures which code ran; the assertions above establish
+whether that code behaved as expected.
+
+For Sonar, set `sonar.coverage.jacoco.xmlReportPaths=target/teavm-coverage.xml`.
+Use this combined report for these application sources. A failing test still
+fails the build, even if a report is available.
+
+## Apply this to your own project
+
+Start with tests that already run in their intended environment. Keep the
+Mockatcha and TeaVM dependencies your tests need, select the JVM and browser
+suites separately, and add the coverage configuration shown above. If all your
+tests run on the JVM, ordinary JaCoCo is enough. If they all run in Chromium,
+TeaCoCo can generate the report without a JVM coverage input.
+
+The [three Maven recipes](../docs/maven.md) cover those arrangements. For details
+about combining results or choosing which library to measure, see the
+[coverage reference](../docs/jacoco-mode.md).
+
+The application classes come from [Mockatcha's timesheet example](https://github.com/instanto-io/mockatcha/tree/4357c2b3a122ca12b6b2a15ff20267d11276ee62/mockatcha-examples),
+with their Apache-2.0 notices retained. This standalone example uses Mockatcha as
+a dependency; it does not require an organisation parent or a modified TeaVM runner.

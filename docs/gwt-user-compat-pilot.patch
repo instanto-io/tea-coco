@@ -32,7 +32,7 @@
      </dependency>
 +    <dependency>
 +      <groupId>io.instanto</groupId>
-+      <artifactId>tea-coco</artifactId>
++      <artifactId>teacoco</artifactId>
 +      <version>0.1.0-SNAPSHOT</version>
 +      <scope>test</scope>
 +    </dependency>
@@ -136,7 +136,7 @@
 +      </plugin>
 +      <plugin>
 +        <groupId>io.instanto</groupId>
-+        <artifactId>tea-coco-maven-plugin</artifactId>
++        <artifactId>teacoco-maven-plugin</artifactId>
 +        <version>0.1.0-SNAPSHOT</version>
 +        <configuration>
 +          <sourceRoots>
@@ -151,13 +151,13 @@
 +        </configuration>
 +        <executions>
 +          <execution>
-+            <id>tea-coco-prepare</id>
++            <id>teacoco-prepare</id>
 +            <goals>
 +              <goal>prepare</goal>
 +            </goals>
 +          </execution>
 +          <execution>
-+            <id>tea-coco-report</id>
++            <id>teacoco-report</id>
 +            <goals>
 +              <goal>report</goal>
 +            </goals>
@@ -168,7 +168,7 @@
    </build>
    <properties>
      <maven.deploy.skip>true</maven.deploy.skip>
-+    <tea-coco.mode>jacoco</tea-coco.mode>
++    <teacoco.mode>jacoco</teacoco.mode>
 +    <pilot.classesDirectory>${project.build.directory}/teavm-coverage/jacoco/classes</pilot.classesDirectory>
    </properties>
  </project>

@@ -1,6 +1,6 @@
 # Live Sonar import check — 2026-10-26
 
-The dedicated [TeaCoCo coverage pilot](https://sonar.instanto.io/dashboard?id=tea-coco-jacoco-pilot)
+The dedicated [TeaCoCo coverage pilot](https://sonar.instanto.io/dashboard?id=teacoco-jacoco-pilot)
 was analyzed at TeaCoCo commit `792f1154c3b4e682d80466e9e9f3117b9395d968` by
 [workflow 40305984423](https://github.com/instanto-io/tea-coco/actions/runs/40305984423).
 The scanner imported the generated standard JaCoCo XML and submitted analysis

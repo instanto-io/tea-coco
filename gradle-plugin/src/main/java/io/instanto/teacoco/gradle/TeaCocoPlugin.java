@@ -41,7 +41,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                 .map(Boolean::parseBoolean)
                 .orElse(true));
     extension.getVersion().convention("0.1.0-SNAPSHOT");
-    extension.getMode().convention("lines");
+    extension.getMode().convention("jacoco");
     extension
         .getClassRoots()
         .from(
@@ -63,10 +63,10 @@ public final class TeaCocoPlugin implements Plugin<Project> {
                 .getSourceDirectories());
     extension
         .getDataDirectory()
-        .convention(project.getLayout().getBuildDirectory().dir("tea-coco/data"));
+        .convention(project.getLayout().getBuildDirectory().dir("teacoco/data"));
     extension
         .getReportFile()
-        .convention(project.getLayout().getBuildDirectory().file("reports/tea-coco/coverage.xml"));
+        .convention(project.getLayout().getBuildDirectory().file("reports/teacoco/coverage.xml"));
     var runtime = project.getConfigurations().create("teaCocoRuntime");
     runtime.setCanBeConsumed(false);
     runtime.setCanBeResolved(true);
@@ -101,7 +101,7 @@ public final class TeaCocoPlugin implements Plugin<Project> {
     // task after the consumer has set its DSL, without depending on TeaVM plugin internals.
     project.afterEvaluate(
         ignored -> {
-          var dependency = "io.instanto:tea-coco:" + extension.getVersion().get();
+          var dependency = "io.instanto:teacoco:" + extension.getVersion().get();
           project.getDependencies().add(runtime.getName(), dependency);
           if (!extension.getEnabled().get()) {
             return;

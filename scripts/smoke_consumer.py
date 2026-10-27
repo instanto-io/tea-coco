@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix='teavm-coverage-consumer-') as temporary
             version.text = '${coverage.version}'
     build = root.find(tag('build'))
     if args.jacoco:
-        ET.SubElement(build, tag('finalName')).text = 'tea-coco-jacoco-example-0.1.0-SNAPSHOT'
+        ET.SubElement(build, tag('finalName')).text = 'teacoco-jacoco-example-0.1.0-SNAPSHOT'
     plugins = build.find(tag('plugins'))
     compiler = ET.SubElement(plugins, tag('plugin'))
     ET.SubElement(compiler, tag('groupId')).text = 'org.apache.maven.plugins'
@@ -56,9 +56,17 @@ with tempfile.TemporaryDirectory(prefix='teavm-coverage-consumer-') as temporary
         assert report.tag == 'report'
         assert report.find(".//method[@name='choose']/counter[@type='BRANCH']").get('covered') == '2'
         assert report.find(".//method[@name='neverCalled']/counter[@type='BRANCH']").get('missed') == '2'
+        # The plugin's opt-out must leave the browser test classpath and compiler
+        # untouched. The fixture's report-assertion ITs are inapplicable without coverage.
+        subprocess.run(command + ['clean', 'verify', '-Dteacoco.skip=true', '-DskipITs'],
+                       cwd=consumer, check=True)
+        assert not (consumer / 'target/teavm-coverage').exists()
+        assert not (consumer / 'target/teavm-coverage.xml').exists()
+        for script in (consumer / 'target/teavm-tests').rglob('*.js'):
+            assert '__TEA_COCO_JACOCO_V1__' not in script.read_text(), script
         # This mirrors deactivating an opt-in coverage profile.
         for plugin in list(plugins):
-            if plugin.find(tag('artifactId')).text == 'tea-coco-maven-plugin':
+            if plugin.find(tag('artifactId')).text == 'teacoco-maven-plugin':
                 plugins.remove(plugin)
             configuration = plugin.find(tag('configuration'))
             if configuration is not None:

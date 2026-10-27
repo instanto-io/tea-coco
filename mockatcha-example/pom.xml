@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.instanto.examples</groupId>
-  <artifactId>mockatcha-tea-coco-demo</artifactId>
+  <artifactId>mockatcha-teacoco-demo</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>Mockatcha and TeaCoCo timesheet example</name>
   <properties>
@@ -10,8 +10,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <teavm.version>0.16.0</teavm.version>
     <mockatcha.version>0.1.0-SNAPSHOT</mockatcha.version>
-    <tea-coco.version>0.1.0-SNAPSHOT</tea-coco.version>
-    <tea-coco.mode>jacoco</tea-coco.mode>
+    <teacoco.version>0.1.0-SNAPSHOT</teacoco.version>
     <jvmCoverageArgs />
     <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
@@ -26,12 +25,6 @@
       <groupId>io.instanto</groupId>
       <artifactId>mockatcha-bdd</artifactId>
       <version>${mockatcha.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.instanto</groupId>
-      <artifactId>tea-coco</artifactId>
-      <version>${tea-coco.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -107,8 +100,9 @@
       </plugin>
       <plugin>
         <groupId>io.instanto</groupId>
-        <artifactId>tea-coco-maven-plugin</artifactId>
-        <version>${tea-coco.version}</version>
+        <artifactId>teacoco-maven-plugin</artifactId>
+        <version>${teacoco.version}</version>
+        <configuration><testPlugin>failsafe</testPlugin></configuration>
         <executions>
           <execution>
             <id>prepare-browser</id>
@@ -146,8 +140,6 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>3.5.4</version>
         <configuration>
-          <classesDirectory>${project.build.directory}/teavm-coverage/jacoco/classes</classesDirectory>
-          <argLine />
           <includes>
             <include>**/*BrowserIT.java</include>
           </includes>
@@ -159,9 +151,6 @@
             <teavm.junit.c>false</teavm.junit.c>
             <teavm.junit.minified>true</teavm.junit.minified>
             <teavm.junit.optimized>true</teavm.junit.optimized>
-            <teavm.coverage.enabled>true</teavm.coverage.enabled>
-            <teavm.coverage.mode>jacoco</teavm.coverage.mode>
-            <teavm.coverage.dataDirectory>${project.build.directory}/teavm-coverage</teavm.coverage.dataDirectory>
           </systemPropertyVariables>
         </configuration>
         <executions>

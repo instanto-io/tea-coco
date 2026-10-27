@@ -76,6 +76,20 @@ public class JacocoPipelineTest {
       new JacocoReporter().generate(data, List.of(reports), output, List.of(sources), List.of());
       assertEquals("1", branches(output, "covered"));
       assertEquals("1", branches(output, "missed"));
+      // Additional executionData is not JVM-specific: a prior TeaCoCo raw report
+      // contributes complementary browser hits with the same original class identity.
+      Path priorBrowser = root.resolve("prior-browser.exec");
+      Files.copy(root.resolve("coverage.xml.exec"), priorBrowser);
+      Files.writeString(
+          reports.resolve("TEST-browser.xml"),
+          "<testsuite><system-out><![CDATA[" + b + "]]></system-out></testsuite>");
+      new JacocoReporter()
+          .generate(data, List.of(reports), output, List.of(sources), List.of(priorBrowser));
+      assertEquals("2", branches(output, "covered"));
+      assertEquals("0", branches(output, "missed"));
+      Files.writeString(
+          reports.resolve("TEST-browser.xml"),
+          "<testsuite><system-out><![CDATA[" + a + "]]></system-out></testsuite>");
       String[] parts = b.substring(b.indexOf('|') + 1).trim().split(";")[0].split(",");
       boolean[] hits = new boolean[parts[2].length()];
       for (int i = 0; i < hits.length; i++) hits[i] = parts[2].charAt(i) == '1';

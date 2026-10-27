@@ -3,21 +3,20 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.instanto</groupId>
-    <artifactId>tea-coco-parent</artifactId>
+    <artifactId>teacoco-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>tea-coco-jacoco-example</artifactId>
+  <artifactId>teacoco-jacoco-example</artifactId>
   <name>JaCoCo coverage through the stock TeaVMTestRunner</name>
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
     <coverage.enabled>true</coverage.enabled>
     <coverage.browser>browser-chrome</coverage.browser>
-    <tea-coco.mode>jacoco</tea-coco.mode>
   </properties>
   <dependencies>
     <dependency>
       <groupId>io.instanto</groupId>
-      <artifactId>tea-coco</artifactId>
+      <artifactId>teacoco</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
@@ -60,17 +59,12 @@
             <teavm.junit.js.runner>browser-chrome</teavm.junit.js.runner>
             <teavm.junit.minified>true</teavm.junit.minified>
             <teavm.junit.optimized>true</teavm.junit.optimized>
-            <teavm.coverage.enabled>true</teavm.coverage.enabled>
-            <teavm.coverage.sourceRoots>${project.basedir}/src/main/java</teavm.coverage.sourceRoots>
-            <teavm.coverage.dataDirectory>${project.build.directory}/teavm-coverage</teavm.coverage.dataDirectory>
-            <teavm.coverage.mode>jacoco</teavm.coverage.mode>
           </systemPropertyVariables>
-          <classesDirectory>${project.build.directory}/teavm-coverage/jacoco/classes</classesDirectory>
         </configuration>
       </plugin>
       <plugin>
         <groupId>io.instanto</groupId>
-        <artifactId>tea-coco-maven-plugin</artifactId>
+        <artifactId>teacoco-maven-plugin</artifactId>
         <version>${project.version}</version>
         <executions>
           <execution>

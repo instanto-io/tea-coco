@@ -15,14 +15,14 @@ import io.instanto.teavm.coverage.JacocoPreparer;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 
-/**
- * Prepare test-only copies; configure Surefire classesDirectory to dataDirectory/jacoco/classes.
- */
+/** Prepare coverage and configure the selected browser test launcher. */
 @Mojo(
     name = "prepare",
     defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES,
@@ -32,7 +32,7 @@ public final class PrepareMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   private MavenProject project;
 
-  @Parameter(property = "tea-coco.mode", defaultValue = "lines")
+  @Parameter(property = "teacoco.mode", defaultValue = "jacoco")
   private String mode;
 
   @Parameter(defaultValue = "${project.build.directory}/teavm-coverage", required = true)
@@ -44,14 +44,32 @@ public final class PrepareMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.compileSourceRoots}", required = true)
   private List<String> sourceRoots;
 
+  @Parameter(defaultValue = "${session}", readonly = true, required = true)
+  private MavenSession session;
+
+  @Parameter(defaultValue = "${plugin.artifacts}", readonly = true, required = true)
+  private List<Artifact> pluginArtifacts;
+
+  @Parameter(property = "teacoco.testPlugin", defaultValue = "surefire")
+  private String testPlugin;
+
+  @Parameter(property = "teacoco.testExecutionId")
+  private String testExecutionId;
+
+  @Parameter(property = "teacoco.skip", defaultValue = "false")
+  private boolean skip;
+
   @Parameter private List<File> classRoots;
   @Parameter private List<String> dependencyIncludes;
 
   @Override
   public void execute() throws MojoExecutionException {
-    if ("lines".equals(mode)) return;
-    if (!"jacoco".equals(mode)) throw new MojoExecutionException("Unknown TeaCoCo mode: " + mode);
+    if (skip) return;
+    if (!"lines".equals(mode) && !"jacoco".equals(mode))
+      throw new MojoExecutionException("Unknown TeaCoCo mode: " + mode);
     try {
+      if (!Set.of("surefire", "failsafe").contains(testPlugin))
+        throw new IllegalArgumentException("testPlugin must be surefire or failsafe");
       Path build = Path.of(project.getBuild().getDirectory()).toAbsolutePath().normalize();
       Path directory = dataDirectory.toPath().toAbsolutePath().normalize();
       if (directory.equals(build) || !directory.startsWith(build))
@@ -69,15 +87,33 @@ public final class PrepareMojo extends AbstractMojo {
       Files.deleteIfExists(outputFile.toPath());
       Files.deleteIfExists(outputFile.toPath().resolveSibling(outputFile.getName() + ".exec"));
       Files.deleteIfExists(outputFile.toPath().resolveSibling("compiler-evidence.json"));
-      var manifest =
-          new JacocoPreparer()
-              .prepare(directory, sourceRoots.stream().map(Path::of).toList(), inputs);
+      if ("jacoco".equals(mode)) {
+        var manifest =
+            new JacocoPreparer()
+                .prepare(directory, sourceRoots.stream().map(Path::of).toList(), inputs);
+        getLog()
+            .info(
+                "Prepared "
+                    + manifest.classes().size()
+                    + " JaCoCo classes in "
+                    + directory.resolve("jacoco/classes"));
+      }
+      BrowserTestConfiguration.install(
+          session,
+          project,
+          testPlugin,
+          testExecutionId,
+          mode,
+          directory,
+          sourceRoots,
+          pluginArtifacts);
       getLog()
           .info(
-              "Prepared "
-                  + manifest.classes().size()
-                  + " JaCoCo classes in "
-                  + directory.resolve("jacoco/classes"));
+              "Enabled TeaCoCo "
+                  + mode
+                  + " coverage for "
+                  + testPlugin
+                  + (testExecutionId == null ? "" : " execution " + testExecutionId));
     } catch (IOException | RuntimeException e) {
       throw new MojoExecutionException("Could not prepare browser coverage: " + e.getMessage(), e);
     }

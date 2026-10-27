@@ -68,7 +68,7 @@ public final class CoveragePlugin implements TeaVMPlugin {
     String mode =
         System.getProperty(
             "teavm.coverage.mode",
-            host.getProperties().getProperty("teavm.coverage.mode", "lines"));
+            host.getProperties().getProperty("teavm.coverage.mode", "jacoco"));
     if (mode.equals("jacoco")) {
       new JacocoCompilerPlugin().install(host);
       return;

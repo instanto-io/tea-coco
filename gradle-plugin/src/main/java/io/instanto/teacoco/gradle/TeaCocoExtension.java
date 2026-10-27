@@ -22,7 +22,7 @@ public abstract class TeaCocoExtension {
 
   public abstract Property<String> getVersion();
 
-  /** lines (default) or jacoco for original-bytecode line/branch coverage. */
+  /** jacoco (default) for original-bytecode coverage, or lines for emitted-source coverage. */
   public abstract Property<String> getMode();
 
   public abstract ConfigurableFileCollection getClassRoots();

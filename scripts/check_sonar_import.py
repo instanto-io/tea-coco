@@ -11,7 +11,7 @@ import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--module", type=Path, default=Path("jacoco-example"))
-parser.add_argument("--project", default="tea-coco-jacoco-pilot")
+parser.add_argument("--project", default="teacoco-jacoco-pilot")
 args = parser.parse_args()
 host = os.environ["SONAR_HOST_URL"].rstrip("/")
 token = os.environ.get("SONAR_READ_TOKEN") or os.environ["SONAR_TOKEN"]

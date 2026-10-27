@@ -1,10 +1,14 @@
 # Original-bytecode line and branch coverage
 
-TeaCoCo's opt-in `jacoco` mode uses JaCoCo 0.8.15 probes in test-only class copies,
+For step-by-step setup, start with the [three Maven recipes](maven.md) or the
+[Gradle guide](gradle.md). This guide explains the coverage model and advanced
+configuration.
+
+TeaCoCo's default `jacoco` mode uses JaCoCo 0.8.15 probes in test-only class copies,
 compiles those copies with stock TeaVM 0.16.0, and collects browser hits through
 stock `TeaVMTestRunner`. JaCoCo analyzes the preserved original classes. No fork,
 application annotations, source maps, JVM agent in the browser, or DevTools API is
-required. The existing `lines` mode remains the default for compatibility.
+required. Select `mode=lines` explicitly only for emitted-source line coverage.
 
 This is an alpha integration for the JavaScript backend and non-incremental
 compilation. Java 8 and 17 class files, static initialization, interface methods,
@@ -20,7 +24,7 @@ are covered by the repository's checks. The Gradle plugin is tested with Gradle
   with source/line debug information, plus the corresponding Java source roots.
 * A dedicated build-output directory and captured JUnit stdout. Each module/test
   task needs its own data directory and report files.
-* Optionally, JVM JaCoCo `.exec` files from **exactly the same original class
+* Optionally, additional JaCoCo `.exec` files (JVM or previous TeaCoCo results) from **exactly the same original class
   bytes**, using the same JaCoCo version. Separate JVM and browser test tasks.
 
 Source roots select classes by package and `SourceFile`; they must match the
@@ -31,61 +35,13 @@ preparation; select an explicit release's classes for a multi-release library.
 Tests must await their async work before completing. A crashed/terminated browser
 cannot flush coverage; missing evidence is an error, not zero-percent success.
 
-## Maven opt-in profile
+## Maven configuration
 
-Keep existing TeaVM dependencies and runner properties. Add this profile to the
-module executing the browser tests, merging with its existing Surefire settings:
-
-```xml
-<profile>
-  <id>browser-coverage</id>
-  <properties>
-    <tea-coco.mode>jacoco</tea-coco.mode>
-    <!-- Only for this browser phase: its class copies already contain probes. -->
-    <jacoco.skip>true</jacoco.skip>
-  </properties>
-  <dependencies>
-    <dependency>
-      <groupId>io.instanto</groupId>
-      <artifactId>tea-coco</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.5.4</version>
-        <configuration>
-          <classesDirectory>${project.build.directory}/teavm-coverage/jacoco/classes</classesDirectory>
-          <systemPropertyVariables>
-            <teavm.coverage.enabled>true</teavm.coverage.enabled>
-            <teavm.coverage.mode>jacoco</teavm.coverage.mode>
-            <teavm.coverage.dataDirectory>${project.build.directory}/teavm-coverage</teavm.coverage.dataDirectory>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>io.instanto</groupId>
-        <artifactId>tea-coco-maven-plugin</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
-        <executions>
-          <execution><goals><goal>prepare</goal><goal>report</goal></goals></execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-</profile>
-```
-
-Run `mvn -Pbrowser-coverage clean verify`. `prepare` runs at
-`process-test-classes`; `report` runs at `verify`. Prepared copies precede original
-classes only on the test classpath. `target/classes`, packaged JARs and published
-application artifacts retain their original bytes. Coverage is off when the
-profile is inactive. If Failsafe executes TeaVM tests, configure its
-`classesDirectory` and coverage properties identically.
+Bind `prepare` and `report` as shown in the [Maven recipes](maven.md). JaCoCo mode
+is the default. Preparation supplies the coverage runtime, settings and prepared
+classpath to Surefire, or to Failsafe when `testPlugin=failsafe`. Use a profile or
+`-Dteacoco.skip=true` to opt out. `testExecutionId` can restrict automatic wiring
+to one execution of the selected launcher. Application JARs retain original bytes.
 
 A test-only module can select a library dependency in the plugin configuration:
 
@@ -97,7 +53,7 @@ A test-only module can select a library dependency in the plugin configuration:
   <dependencyIncludes>
     <dependencyInclude>example:library</dependencyInclude>
   </dependencyIncludes>
-  <!-- Optional raw JVM coverage, preserved outside the browser clean output. -->
+  <!-- Optional additional raw coverage, preserved outside the browser clean output. -->
   <executionData><file>${project.basedir}/../jvm-results/jacoco.exec</file></executionData>
 </configuration>
 ```
@@ -108,14 +64,13 @@ the current module's main classes are selected. `sourceRoots` defaults to its
 compile source roots. The preparer retains all selected original executable
 classes, including classes no browser test reaches.
 
-Do not attach a standard JaCoCo JVM agent to prepared browser classes. If an
-inherited build configures `argLine` directly, remove that agent from the browser
-phase as well as disabling `prepare-agent`. Collect JVM tests against originals
-separately and supply their `.exec` files above. Reports with different class IDs
+TeaCoCo removes standard JaCoCo agent arguments from its selected browser test
+execution while preserving unrelated JVM arguments. Collect JVM tests against
+originals separately and supply their `.exec` files above. Reports with different class IDs
 or probe counts fail rather than producing an inaccurate union.
 
 Maven stops before `verify` when Surefire fails. Collect the evidence separately
-with `mvn -Pbrowser-coverage tea-coco:report` (or the fully qualified plugin goal),
+with `mvn -Pbrowser-coverage teacoco:report` (or the fully qualified plugin goal),
 while preserving the failed test command's exit status in CI. Do not ignore test
 failures or run `prepare` again before this report: preparation starts a new run.
 
@@ -126,10 +81,9 @@ Add the plugin alongside the existing TeaVM library/application plugin, using th
 
 ```kotlin
 plugins {
-    id("io.instanto.tea-coco") version "0.1.0-SNAPSHOT"
+    id("io.instanto.teacoco") version "0.1.0-SNAPSHOT"
 }
 teaCoco {
-    mode.set("jacoco")
     testTask.set("test")
     // Defaults: main source roots and main output classes.
     // sourceRoots.setFrom(layout.projectDirectory.dir("../library/src/main/java"))
@@ -155,10 +109,10 @@ instance per project and one selected browser test task for now.
 
 | Output | Maven default | Gradle default |
 | --- | --- | --- |
-| Standard JaCoCo XML | `target/teavm-coverage.xml` | `build/reports/tea-coco/coverage.xml` |
+| Standard JaCoCo XML | `target/teavm-coverage.xml` | `build/reports/teacoco/coverage.xml` |
 | Standard raw union | XML path plus `.exec` | XML path plus `.exec` |
-| Compiler diagnostics | `target/compiler-evidence.json` | `build/reports/tea-coco/compiler-evidence.json` |
-| Original classes, overlay and run manifest | `target/teavm-coverage/jacoco/` | `build/tea-coco/data/jacoco/` |
+| Compiler diagnostics | `target/compiler-evidence.json` | `build/reports/teacoco/compiler-evidence.json` |
+| Original classes, overlay and run manifest | `target/teavm-coverage/jacoco/` | `build/teacoco/data/jacoco/` |
 
 Use `sonar.coverage.jacoco.xmlReportPaths` for this mode. The old line-only mode
 uses `sonar.coverageReportPaths` instead. Import the **single merged report** for

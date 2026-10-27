@@ -3,17 +3,19 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>io.instanto</groupId>
-    <artifactId>tea-coco-parent</artifactId>
+    <artifactId>teacoco-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>tea-coco-maven-plugin</artifactId>
+  <artifactId>teacoco-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
   <name>TeaCoCo Maven reporting</name>
   <dependencies>
+    <dependency><groupId>org.codehaus.plexus</groupId><artifactId>plexus-utils</artifactId><version>3.5.1</version></dependency>
+    <dependency><groupId>junit</groupId><artifactId>junit</artifactId><version>4.13.2</version><scope>test</scope></dependency>
     <dependency><groupId>org.apache.maven</groupId><artifactId>maven-core</artifactId><version>3.9.9</version><scope>provided</scope></dependency>
     <dependency>
       <groupId>io.instanto</groupId>
-      <artifactId>tea-coco</artifactId>
+      <artifactId>teacoco</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

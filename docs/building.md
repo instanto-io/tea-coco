@@ -9,11 +9,11 @@ Source repository: [instanto-io/tea-coco](https://github.com/instanto-io/tea-coc
 
 | Coordinates | Purpose |
 | --- | --- |
-| io.instanto:tea-coco-parent | Maven metadata parent; consumers do not need to inherit it. |
-| io.instanto:tea-coco | Compiler extension, browser runtime and standalone reporter. |
-| io.instanto:tea-coco-maven-plugin | Maven report goal. |
-| io.instanto:tea-coco-gradle-plugin | Gradle integration. |
-| io.instanto.tea-coco:io.instanto.tea-coco.gradle.plugin | Gradle plugin marker for the plugins DSL. |
+| io.instanto:teacoco-parent | Maven metadata parent; consumers do not need to inherit it. |
+| io.instanto:teacoco | Compiler extension, browser runtime and standalone reporter. |
+| io.instanto:teacoco-maven-plugin | Maven class preparation and report goals. |
+| io.instanto:teacoco-gradle-plugin | Gradle integration. |
+| io.instanto.teacoco:io.instanto.teacoco.gradle.plugin | Gradle plugin marker for the plugins DSL. |
 
 All currently use version `0.1.0-SNAPSHOT`. Source JARs are included for the
 library and plugin implementations. The example is a verification fixture.
@@ -26,11 +26,10 @@ extension and Maven plugin in your local Maven repository:
 
 ```sh
 mvn -B -ntp -s central-settings.xml clean install
-python3 scripts/smoke_consumer.py
 ```
 
-The smoke test checks an independent Maven consumer. Continue with the
-[consumer guide](consumer-guide.md) to add coverage to an existing application.
+No Python is needed to build or use these artifacts. Continue with the
+[Maven guide](maven.md) to choose JVM-only, mixed or browser-only coverage.
 
 ## Gradle
 
@@ -39,8 +38,6 @@ its implementation and plugin marker locally:
 
 ```sh
 ./gradlew --no-daemon check publishToMavenLocal
-python3 scripts/smoke_gradle_consumer.py
-python3 scripts/smoke_jacoco_gradle_consumer.py
 ```
 
 The Gradle wrapper is included. Configure `mavenLocal()` for both plugin and

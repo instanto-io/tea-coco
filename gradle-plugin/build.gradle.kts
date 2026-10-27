@@ -17,7 +17,7 @@ dependencies { testImplementation("junit:junit:4.13.2") }
 gradlePlugin {
     plugins {
         create("teaCoco") {
-            id = "io.instanto.tea-coco"
+            id = "io.instanto.teacoco"
             implementationClass = "io.instanto.teacoco.gradle.TeaCocoPlugin"
             displayName = "TeaCoCo browser coverage"
             description = "Java source coverage for unmodified TeaVM browser tests"

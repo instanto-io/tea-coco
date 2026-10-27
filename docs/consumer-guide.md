@@ -1,7 +1,8 @@
 # Using TeaCoCo in a library or application
 
-This guide describes the default `lines` mode. For original-bytecode line/branch
-coverage and exact JVM/browser merging, use the [JaCoCo mode guide](jacoco-mode.md).
+This guide describes the optional `lines` mode. For original-bytecode line/branch
+coverage and exact JVM/browser merging, start with the [Maven recipes](maven.md)
+or the [JaCoCo mode guide](jacoco-mode.md).
 
 
 TeaCoCo measures Java lines executed **in the browser** after TeaVM compiles them to JavaScript.
@@ -36,11 +37,11 @@ JVM arguments and Surefire/Failsafe configuration; this profile adds coverage se
 
 ```xml
 <profile>
-  <id>tea-coco</id>
+  <id>teacoco</id>
   <dependencies>
     <dependency>
       <groupId>io.instanto</groupId>
-      <artifactId>tea-coco</artifactId>
+      <artifactId>teacoco</artifactId>
       <version>0.1.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
@@ -53,6 +54,7 @@ JVM arguments and Surefire/Failsafe configuration; this profile adds coverage se
         <configuration>
           <systemPropertyVariables>
             <teavm.coverage.enabled>true</teavm.coverage.enabled>
+            <teavm.coverage.mode>lines</teavm.coverage.mode>
             <teavm.coverage.sourceRoots>${project.basedir}/src/main/java</teavm.coverage.sourceRoots>
             <teavm.coverage.dataDirectory>${project.build.directory}/teavm-coverage</teavm.coverage.dataDirectory>
           </systemPropertyVariables>
@@ -60,8 +62,9 @@ JVM arguments and Surefire/Failsafe configuration; this profile adds coverage se
       </plugin>
       <plugin>
         <groupId>io.instanto</groupId>
-        <artifactId>tea-coco-maven-plugin</artifactId>
+        <artifactId>teacoco-maven-plugin</artifactId>
         <version>0.1.0-SNAPSHOT</version>
+        <configuration><mode>lines</mode></configuration>
         <executions><execution><goals><goal>report</goal></goals></execution></executions>
       </plugin>
     </plugins>
@@ -69,7 +72,7 @@ JVM arguments and Surefire/Failsafe configuration; this profile adds coverage se
 </profile>
 ```
 
-Run `mvn -U -Ptea-coco clean verify` using the repository's normal Maven settings and browser environment.
+Run `mvn -U -Pteacoco clean verify` using the repository's normal Maven settings and browser environment.
 If Failsafe owns the browser tests, put the system properties in Failsafe instead. The report plugin reads both
 `target/surefire-reports` and `target/failsafe-reports` by default. Keep its verify execution after your integration
 tests; the usual Failsafe integration-test phase already precedes verify.
@@ -85,7 +88,7 @@ sources it exercises. For example, in a Unix build with two source roots:
 <!-- In the test plugin's systemPropertyVariables -->
 <teavm.coverage.sourceRoots>${project.basedir}/../library-a/src/main/java:${project.basedir}/../library-b/src/main/java</teavm.coverage.sourceRoots>
 
-<!-- In tea-coco-maven-plugin's configuration -->
+<!-- In teacoco-maven-plugin's configuration -->
 <sourceRoots>
   <sourceRoot>${project.basedir}/../library-a/src/main/java</sourceRoot>
   <sourceRoot>${project.basedir}/../library-b/src/main/java</sourceRoot>
@@ -104,7 +107,7 @@ There is no automatic cross-module aggregation task in this first release.
 ## Applications with Playwright or another browser harness
 
 Adding a dependency to a JVM Playwright test does not instrument an application compiled in a separate task.
-Load TeaCoCo on the **application compiler's** classpath and pass the three `teavm.coverage.*` properties into that
+Load TeaCoCo on the **application compiler's** classpath and pass the `teavm.coverage.*` properties (including `mode=lines`) into that
 TeaVM compilation. Keep the runtime available to TeaVM's class source as well. Use a dedicated coverage build;
 do not ship these instrumented bundles as production artifacts.
 
@@ -140,15 +143,15 @@ Use a clean build with fresh compiler data. Reusing a browser compilation withou
 Gradle's integration reruns the selected coverage test task and clears its previous baselines automatically.
 
 Stock runner failures flush coverage too. Maven stops before verify when tests fail; you can run
-`mvn io.instanto:tea-coco-maven-plugin:0.1.0-SNAPSHOT:report` separately to inspect evidence, with the same configuration.
+`mvn io.instanto:teacoco-maven-plugin:0.1.0-SNAPSHOT:report` separately to inspect evidence, with the same configuration.
 The command does not fix or suppress the original failing test. The Gradle plugin finalizes its selected test task
 with reporting and preserves Gradle's failure result.
 
 For a Maven module, import `target/teavm-coverage.xml` with `sonar.coverageReportPaths`.
-For Gradle, use `build/reports/tea-coco/coverage.xml`. Ensure the scanner analyzes the same source checkout and can
+For Gradle, use `build/reports/teacoco/coverage.xml`. Ensure the scanner analyzes the same source checkout and can
 resolve the absolute source paths. If you also use JaCoCo, keep its XML in `sonar.coverage.jacoco.xmlReportPaths`;
 do not put TeaCoCo's generic XML there. Validate scanner imports before changing coverage gates or combining metrics.
-The current TeaCoCo version adds line hits only. For overlapping reports, Sonar ORs line hits but uses maximum
+TeaCoCo's `lines` mode adds line hits only. For overlapping reports, Sonar ORs line hits but uses maximum
 branch counts; this is not an exact union of complementary branch executions. See the
 [branch coverage analysis](branch-coverage-design.md#sonar-thresholds-and-the-limits-of-merging-xml).
 

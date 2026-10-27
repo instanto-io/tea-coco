@@ -34,7 +34,7 @@ public final class JacocoReporter {
   public static void main(String[] args) throws IOException {
     if (args.length < 4)
       throw new IllegalArgumentException(
-          "Usage: JacocoReporter dataDirectory outputFile sourceRoots [--exec=JVM.exec]"
+          "Usage: JacocoReporter dataDirectory outputFile sourceRoots [--exec=coverage.exec]"
               + " reportDirectory...");
     List<Path> reports = new ArrayList<>(), jvm = new ArrayList<>();
     for (String arg : Arrays.copyOfRange(args, 3, args.length)) {
@@ -102,7 +102,7 @@ public final class JacocoReporter {
         var entry = entries.get(hit.getName());
         if (entry == null) continue;
         if (id(entry.id()) != hit.getId() || entry.probes() != hit.getProbes().length)
-          throw new IOException("JVM/browser class mismatch: " + hit.getName());
+          throw new IOException("Additional execution data class mismatch: " + hit.getName());
         current.put(hit);
       }
     }
@@ -118,7 +118,7 @@ public final class JacocoReporter {
     }
     Files.createDirectories(output.toAbsolutePath().getParent());
     Path temp =
-        Files.createTempFile(output.toAbsolutePath().getParent(), "tea-coco-jacoco-", ".xml");
+        Files.createTempFile(output.toAbsolutePath().getParent(), "teacoco-jacoco-", ".xml");
     try {
       try (OutputStream stream = Files.newOutputStream(temp)) {
         var visitor = new XMLFormatter().createVisitor(stream);
