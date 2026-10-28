@@ -21,9 +21,6 @@ mvn clean verify
 
 This runs the tests and generates the coverage reports. No Python is required.
 For TeaCoCo installation, see [building from source](../docs/building.md).
-If you use the Instanto snapshot registry instead, the included `settings.xml`
-reads `FORGEJO_PACKAGE_USER` and `FORGEJO_PACKAGE_TOKEN` from your environment;
-run `mvn -s settings.xml -U clean verify` with those credentials configured.
 
 ## What the service should do
 
