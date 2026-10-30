@@ -433,6 +433,12 @@ testing. WebAssembly and C are outside the supported scope. Native JavaScript
 bodies, generated intrinsic internals and code without source locations are
 outside Java line coverage. Enable instrumentation for coverage testing only.
 
+## Quality
+
+SpotBugs runs on every build. High-priority findings fail the build, and all findings are published to [code scanning](https://github.com/instanto-io/teacoco/security/code-scanning). SonarQube analysis runs on `main` against the organisation's private instance; maintainers see the gate, coverage and issue counts in the workflow summary. The Sonar quality gate is advisory, so a snapshot still publishes when only that gate fails.
+
+See [Actions](https://github.com/instanto-io/teacoco/actions) for the latest verification and quality summary.
+
 ## Source and license
 
 TeaCoCo uses TeaVM's public plugin SPI and intermediate-code model, and JaCoCo's
