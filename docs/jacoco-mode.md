@@ -150,5 +150,5 @@ The portable runtime holds boolean arrays; it is not JaCoCo's JVM agent. Java 11
 JaCoCo instrumentation uses a constant-dynamic lookup that TeaVM 0.16 cannot parse.
 TeaCoCo lowers that specific synthetic lookup to an ordinary static call without
 changing JaCoCo's original class ID, probe placement or index. Other bytecode is
-not rewritten by that adapter. The [parity experiment](../scripts/check_jacoco_teavm.py)
+not rewritten by that adapter. The [parity experiment](../research/jacoco-teavm-prototype/src/test/java/prototype/JaCoCoTeaVMTest.java)
 compares real JVM-agent and browser probe arrays and their complementary union.

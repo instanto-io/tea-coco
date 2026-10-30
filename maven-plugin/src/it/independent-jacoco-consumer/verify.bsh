@@ -1,0 +1,16 @@
+import java.io.File;
+import java.nio.file.Files;
+
+File coverageXml = new File(basedir, "target/teavm-coverage.xml");
+if (!coverageXml.isFile()) {
+    throw new Exception("Coverage XML must exist");
+}
+String text = Files.readString(coverageXml.toPath());
+if (!text.contains("<report") || !text.contains("name=\"choose\"") || !text.contains("name=\"neverCalled\"")) {
+    throw new Exception("Expected JaCoCo branch coverage in " + coverageXml);
+}
+if (!text.contains("covered=\"2\"")) {
+    throw new Exception("Expected branch covered count 2 in " + coverageXml);
+}
+System.out.println("Verified independent JaCoCo consumer: target/teavm-coverage.xml report generated successfully.");
+return true;

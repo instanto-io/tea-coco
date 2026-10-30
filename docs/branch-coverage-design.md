@@ -56,7 +56,7 @@ Sources: [offline instrumentation](https://www.jacoco.org/jacoco/trunk/doc/offli
 With JDK 21, Maven and Google Chrome installed:
 
 ```sh
-python3 scripts/check_jacoco_teavm.py
+mvn -f research/jacoco-teavm-prototype/pom.xml test
 ```
 
 The script first runs the genuine JaCoCo-agent oracle, then compiles the **same fixture source** in the independent
@@ -151,7 +151,7 @@ Source: [StringSwitchJavacFilter](https://github.com/jacoco/jacoco/blob/v0.8.15/
 Run from the TeaCoCo repository with JDK 21 and Maven:
 
 ```sh
-python3 scripts/check_jacoco_branch_reference.py
+mvn -f research/jacoco-branch-reference/pom.xml test
 ```
 
 This runs real JaCoCo agent measurements for input sets A, B and their union. It also merges the A/B `.exec` files

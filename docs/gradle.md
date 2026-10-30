@@ -99,8 +99,8 @@ Other tasks keep their normal Gradle caching behavior. `dataDirectory` must be a
 
 * Validated with Gradle **9.3.1**, build JDK **21**, TeaVM **0.16.0**, and real Chrome tests.
 * Integrates one selected JUnit `Test` task per project; separate projects can each generate a report.
-* TestKit checks configuration safety and disabled mode. The independent consumer smoke verifies both official
-  TeaVM plugins, covered/uncovered/omitted lines, new baselines on repeat runs, failure-path collection, and disabled mode.
+* TestKit integration tests verify both official TeaVM plugins, covered/uncovered/omitted lines,
+  fresh baselines on repeat runs, failure-path collection, and disabled mode.
 * Gradle configuration cache is explicitly unsupported for the instrumented test/report tasks in this first version.
 * This is not automatic instrumentation of TeaVM's `generateJavaScript` tasks. Custom Playwright/application harnesses
   use the [compiler configuration and collection contract](consumer-guide.md#applications-with-playwright-or-another-browser-harness).

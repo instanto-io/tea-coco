@@ -1,0 +1,13 @@
+import java.io.File;
+import java.nio.file.Files;
+
+File coverageXml = new File(basedir, "target/teavm-coverage.xml");
+if (!coverageXml.isFile()) {
+    throw new Exception("Coverage XML must exist");
+}
+String text = Files.readString(coverageXml.toPath());
+if (!text.contains("<coverage") || !text.contains("lineToCover")) {
+    throw new Exception("Expected line coverage in " + coverageXml);
+}
+System.out.println("Verified independent line consumer: target/teavm-coverage.xml generated successfully.");
+return true;

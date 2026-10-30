@@ -398,11 +398,15 @@ semantics and compiler diagnostics in more detail.
 
 ## Examples and validation
 
-- [Browser-only example](jacoco-example/pom.xml): stock TeaVMTestRunner with
+- [JaCoCo branch example](jacoco-example/pom.xml): stock `TeaVMTestRunner` with
   JaCoCo-compatible line and branch reporting.
+- [Line-only example](example/pom.xml): lightweight line coverage via TeaVM compiler metadata.
 - [Mockatcha timesheet example](mockatcha-example/README.md): complementary tests
-  demonstrate **1/6 JVM + 5/6 browser → 6/6 merged branch outcomes**, retaining
-  unchanged application JARs.
+  demonstrate **1/6 JVM + 5/6 browser → 6/6 merged branch outcomes**, verified by
+  `CoverageParityIT` and retaining unchanged application JARs.
+- **Automated verification**: Independent Maven consumers are verified natively during
+  the build via Maven Invoker (`maven-plugin/src/it`), and independent Gradle consumers
+  via Gradle TestKit (`gradle-plugin/src/test`).
 
 ## Custom browser harnesses
 

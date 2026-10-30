@@ -80,7 +80,7 @@
           </execution>
           <execution>
             <id>jvm-report</id>
-            <phase>verify</phase>
+            <phase>post-integration-test</phase>
             <goals>
               <goal>report</goal>
             </goals>
@@ -113,7 +113,7 @@
           </execution>
           <execution>
             <id>browser-only-report</id>
-            <phase>verify</phase>
+            <phase>post-integration-test</phase>
             <goals>
               <goal>report</goal>
             </goals>
@@ -123,7 +123,7 @@
           </execution>
           <execution>
             <id>merged-report</id>
-            <phase>verify</phase>
+            <phase>post-integration-test</phase>
             <goals>
               <goal>report</goal>
             </goals>
@@ -139,26 +139,39 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>3.5.4</version>
-        <configuration>
-          <includes>
-            <include>**/*BrowserIT.java</include>
-          </includes>
-          <systemPropertyVariables>
-            <teavm.junit.target>${project.build.directory}/teavm-tests</teavm.junit.target>
-            <teavm.junit.js>true</teavm.junit.js>
-            <teavm.junit.js.runner>browser-chrome</teavm.junit.js.runner>
-            <teavm.junit.wasm-gc>false</teavm.junit.wasm-gc>
-            <teavm.junit.c>false</teavm.junit.c>
-            <teavm.junit.minified>true</teavm.junit.minified>
-            <teavm.junit.optimized>true</teavm.junit.optimized>
-          </systemPropertyVariables>
-        </configuration>
         <executions>
           <execution>
+            <id>browser-tests</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/*BrowserIT.java</include>
+              </includes>
+              <systemPropertyVariables>
+                <teavm.junit.target>${project.build.directory}/teavm-tests</teavm.junit.target>
+                <teavm.junit.js>true</teavm.junit.js>
+                <teavm.junit.js.runner>browser-chrome</teavm.junit.js.runner>
+                <teavm.junit.wasm-gc>false</teavm.junit.wasm-gc>
+                <teavm.junit.c>false</teavm.junit.c>
+                <teavm.junit.minified>true</teavm.junit.minified>
+                <teavm.junit.optimized>true</teavm.junit.optimized>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+          <execution>
+            <id>verify-coverage-parity</id>
+            <phase>verify</phase>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
+            <configuration>
+              <includes>
+                <include>**/CoverageParityIT.java</include>
+              </includes>
+            </configuration>
           </execution>
         </executions>
       </plugin>

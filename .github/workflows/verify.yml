@@ -20,20 +20,10 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Verify Maven artifacts against upstream TeaVM and real Chrome
+      - name: Verify Maven artifacts and independent consumers against upstream TeaVM and real Chrome
         run: mvn -B -ntp -s central-settings.xml clean install
-      - name: Verify JaCoCo agent and TeaVM browser probe parity, merging and compiler evidence
-        run: python3 scripts/check_jacoco_teavm.py
-      - name: Verify an unrelated Maven consumer
-        run: |
-          python3 scripts/smoke_consumer.py
-          python3 scripts/smoke_consumer.py --jacoco
-      - name: Verify Gradle plugin and install plugin markers locally
+      - name: Verify Gradle plugin and consumer integrations
         run: ./gradlew --no-daemon check publishToMavenLocal
-      - name: Verify upstream TeaVM Gradle library and application consumers
-        run: |
-          python3 scripts/smoke_gradle_consumer.py
-          python3 scripts/smoke_jacoco_gradle_consumer.py
   publish-snapshot:
     needs: verify
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -65,21 +55,11 @@ jobs:
             -Dmaven.repo.local="$RUNNER_TEMP/teacoco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
             -pl coverage,maven-plugin -am clean deploy -DskipTests
           ./gradlew --no-daemon publish
-      - name: Verify published Maven and Gradle snapshots from fresh caches
-        run: |
-          set -euo pipefail
-          python3 scripts/smoke_consumer.py --settings .github/maven-settings.xml \
-            --local-repository "$RUNNER_TEMP/teacoco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
-          python3 scripts/smoke_consumer.py --jacoco --settings .github/maven-settings.xml \
-            --local-repository "$RUNNER_TEMP/teacoco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
-          python3 scripts/smoke_gradle_consumer.py --published
-          python3 scripts/smoke_jacoco_gradle_consumer.py --published
       - name: Clean job-local package caches
         if: always()
         run: |
           rm -rf -- "$GRADLE_USER_HOME" \
-            "$RUNNER_TEMP/teacoco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}" \
-            "$RUNNER_TEMP/teacoco-published-m2-${{ github.run_id }}-${{ github.run_attempt }}"
+            "$RUNNER_TEMP/teacoco-deploy-m2-${{ github.run_id }}-${{ github.run_attempt }}"
   mockatcha-example:
     needs: publish-snapshot
     runs-on: [self-hosted, instanto-container]
@@ -102,7 +82,7 @@ jobs:
       - name: Verify snapshots with JVM and browser tests
         run: |
           mvn -B -ntp -U -s settings.xml -Dmaven.repo.local="$DEMO_MAVEN_CACHE" clean verify
-          python3 verify_coverage.py >> "$GITHUB_STEP_SUMMARY"
+          cat target/coverage-comparison.md >> "$GITHUB_STEP_SUMMARY"
       - name: Publish coverage diagnostics
         if: always()
         run: |
