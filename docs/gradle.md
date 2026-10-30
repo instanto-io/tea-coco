@@ -47,7 +47,6 @@ tasks.test {
 }
 teaCoco {
     // Defaults shown; no extra configuration is needed for src/main/java + test.
-    enabled.set(true)
     testTask.set("test")
     sourceRoots.setFrom(layout.projectDirectory.dir("src/main/java"))
 }
@@ -66,6 +65,8 @@ Original-bytecode line/branch coverage and standard JaCoCo XML are the default.
 Select `teaCoco { mode.set("lines") }` only for emitted-source generic XML and
 `not-emitted.json`. See the [JaCoCo mode guide](jacoco-mode.md#gradle) for
 class roots, JVM execution-data merging and the selected task's agent behavior.
+The README also has a [mixed JVM/browser recipe](../README.md#mixed-jvm-and-chromium-tests-with-gradle)
+with separate test filters, a JVM task and explicit ordering before collection.
 
 ## Configuration
 
@@ -84,6 +85,10 @@ class roots, JVM execution-data merging and the selected task's agent behavior.
 The plugin adds TeaCoCo only to the selected test's runtime and its separate reporting configuration. Production
 runtime dependencies are unchanged. It requires captured stdout in JUnit XML and enables it for the selected task.
 The compiler's source roots and reporter's source roots come from the same setting.
+The `teaCoco.enabled` project property supplies the default for `enabled`; setting
+`enabled.set(true)` explicitly overrides `-PteaCoco.enabled=false`. Leave it unset
+to retain the command-line opt-out. Disabling coverage leaves older report files
+in place; use a clean build when checking that no new reports are generated.
 
 A coverage invocation deliberately reruns the selected test task, disables its build-cache reuse and clears previous
 coverage baselines/report. This prevents UUIDs or zero-hit inventories from one compilation mixing with another.

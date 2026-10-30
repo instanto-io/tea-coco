@@ -98,11 +98,34 @@ The [complete mixed recipe](docs/maven.md#2-mixed-jvm-and-chromium-tests) uses:
    and **no JVM agent**. Browser tests use `@SkipJVM` to avoid a second JVM run.
 4. TeaCoCo `report` at `verify`, with JVM data supplied through `executionData`:
 
+The TeaCoCo part of that setup is:
+
 ```xml
-<!-- Inside teacoco-maven-plugin's configuration -->
-<executionData>
-  <file>${project.build.directory}/jacoco.exec</file>
-</executionData>
+<plugin>
+  <groupId>io.instanto</groupId>
+  <artifactId>teacoco-maven-plugin</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <configuration>
+    <testPlugin>failsafe</testPlugin>
+  </configuration>
+  <executions>
+    <execution>
+      <id>prepare-browser</id>
+      <phase>pre-integration-test</phase>
+      <goals><goal>prepare</goal></goals>
+    </execution>
+    <execution>
+      <id>merged-report</id>
+      <phase>verify</phase>
+      <goals><goal>report</goal></goals>
+      <configuration>
+        <executionData>
+          <file>${project.build.directory}/jacoco.exec</file>
+        </executionData>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
 ```
 
 With that recipe installed, run `mvn clean verify`. The combined report is
@@ -139,6 +162,52 @@ profile.
 `target/teavm-coverage.xml` and `.xml.exec` files now contain **browser-only**
 coverage. No JVM execution-data file or JaCoCo JVM agent is needed.
 
+### Maven configuration reference
+
+Put shared settings in the plugin's `<configuration>` so preparation and reporting
+use the same sources, data directory and output path. Settings inside an execution
+apply only to its goals, as with `executionData` in the mixed example above.
+
+| Setting | Default | When to change it |
+| --- | --- | --- |
+| `mode` | `jacoco` | Set `lines` only for line-only generic XML. CLI: `-Dteacoco.mode=lines`. |
+| `skip` | `false` | Use `-Dteacoco.skip=true` to skip both goals and automatic test configuration. |
+| `testPlugin` | `surefire` | Set `failsafe` when it launches the browser tests; also move `prepare` to `pre-integration-test`. CLI: `-Dteacoco.testPlugin=failsafe`. |
+| `testExecutionId` | All test executions of the selected plugin | Select one execution by its Maven `<id>` if that plugin launches other tests too. CLI: `-Dteacoco.testExecutionId=browser-tests`. |
+| `sourceRoots` | The module's compile source roots | Supply matching library or generated-source directories when tests live elsewhere. |
+| `dependencyIncludes` | Empty | In JaCoCo mode, add resolved dependencies by exact `groupId:artifactId` to measure library code. |
+| `classRoots` | Empty; the module's main output is always an input | In JaCoCo mode, add other class directories or JARs. |
+| `executionData` | Empty | Merge additional compatible raw `.exec` files in JaCoCo mode. Omit for browser-only coverage. |
+| `dataDirectory` | `target/teavm-coverage` | Choose a dedicated directory below this module's build directory. Preparation starts a fresh run there. |
+| `outputFile` | `target/teavm-coverage.xml` | Change the XML destination; raw JaCoCo output adds `.exec` to this path. |
+| `surefireReports`, `failsafeReports` | `target/surefire-reports`, `target/failsafe-reports` | Point the reporter at custom JUnit XML output directories. Both are read by default. |
+
+For example, a separate browser-test module can measure a library it already
+depends on. Add this inside the TeaCoCo plugin alongside its goal bindings:
+
+```xml
+<configuration>
+  <sourceRoots>
+    <sourceRoot>${project.basedir}/../library/src/main/java</sourceRoot>
+  </sourceRoots>
+  <dependencyIncludes>
+    <dependencyInclude>example:library</dependencyInclude>
+  </dependencyIncludes>
+</configuration>
+```
+
+The dependency must be resolved by Maven, and the source root must match its class
+files. Use `<classRoots><classRoot>...</classRoot></classRoots>` for an additional
+directory or JAR instead. Source roots select the report scope; they are directories
+above package paths, not individual source files. There is no automatic reactor-wide
+aggregation goal.
+
+`prepare` defaults to `process-test-classes`; `report` defaults to `verify`.
+Binding those goals is enough: no explicit mode, enable flag, runtime dependency,
+or Surefire classpath override is required. A plugin declared only in
+`pluginManagement` does not execute. Use a Maven profile to make the goal bindings
+optional, or `-Dteacoco.skip=true` to keep the profile active without coverage.
+
 ### Read or import the report
 
 | Scenario | XML for Sonar | Raw execution data |
@@ -173,29 +242,141 @@ shows the command and explains failure handling.
 
 ## Gradle plugin
 
-The same three choices apply: use Gradle's standard JaCoCo plugin for JVM-only
-tests, TeaCoCo for browser tests, and separate tasks plus raw JVM `executionData`
-for mixed coverage. Alongside your existing TeaVM plugin and browser test setup:
+Use Gradle's standard `jacoco` plugin for JVM-only tests. For browser coverage,
+apply **`io.instanto.teacoco`** alongside TeaVM's `org.teavm.library` or `org.teavm`
+plugin. TeaCoCo configures one existing `Test` task per project; it does not create
+browser tests or instrument an application's `generateJavaScript` task.
+
+### Resolve and apply the plugin
+
+For the current alpha, [build and install the artifacts locally](docs/gradle.md#build-locally).
+Add local resolution in `settings.gradle.kts` so Gradle can find the plugin marker:
 
 ```kotlin
-plugins {
-    id("io.instanto.teacoco") version "0.1.0-SNAPSHOT"
-}
-
-teaCoco {
-    testTask.set("test")
+pluginManagement {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+        mavenCentral()
+    }
 }
 ```
 
-Run `./gradlew teaCocoReport` to prepare classes, execute the selected browser
-tests and write `build/reports/teacoco/coverage.xml` plus `.xml.exec`. The selected
-test task also finalizes with collection/reporting when run directly. If Gradle's
-JaCoCo plugin is present, TeaCoCo disables its agent only on that prepared browser
-test task. Other JVM tasks can retain their agent.
+Then use this in `build.gradle.kts`, retaining your project's existing TeaVM
+dependencies and test settings:
 
-See the [Gradle guide](docs/gradle.md) for snapshot resolution and task behavior,
-and the [mixed-coverage configuration](docs/jacoco-mode.md#gradle) for supplying
-JVM execution data and ordering the tasks.
+```kotlin
+plugins {
+    java
+    id("org.teavm.library") version "0.16.0" // or org.teavm for an application
+    id("io.instanto.teacoco") version "0.1.0-SNAPSHOT"
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.teavm:teavm-jso-impl:0.16.0")
+}
+
+tasks.test {
+    useJUnit()
+    systemProperty("teavm.junit.js", "true")
+    systemProperty("teavm.junit.js.runner", "browser-chrome")
+}
+```
+
+No `teaCoco` block is needed for the defaults: coverage is enabled in `jacoco`
+mode for `test`, measuring the main source set's Java classes. Browser tests use
+`TeaVMTestRunner` and `@SkipJVM`. The plugin supplies its runtime automatically.
+
+### Run tests and collect the report
+
+Run `./gradlew teaCocoReport`, or run the selected browser test task directly.
+
+| Task | What it does |
+| --- | --- |
+| `teaCocoPrepare` | Prepares fresh test-only class copies in JaCoCo mode before the selected browser task. |
+| Selected `Test` task (`test` by default) | Runs the browser tests with coverage and captures their JUnit output. |
+| `teaCocoCollect` | Writes the report from existing evidence; also runs as the selected test's finalizer. Invoking it alone does not run tests. |
+| `teaCocoReport` | Runs the selected tests and collection together. |
+
+The default outputs are `build/reports/teacoco/coverage.xml`,
+`coverage.xml.exec` and `compiler-evidence.json`. Import the XML with
+`sonar.coverage.jacoco.xmlReportPaths`. TeaCoCo does not generate HTML itself;
+Gradle's `JacocoReport` can render the raw data against the same original classes.
+
+Collection runs after an ordinary test failure, and the build still fails.
+Coverage runs deliberately rerun the selected test task rather than reuse cached
+test results. Configuration cache is not supported for these tasks yet.
+
+### Gradle configuration reference
+
+Configure these properties in a `teaCoco { ... }` block in `build.gradle.kts`:
+
+| Property | Default | Example or purpose |
+| --- | --- | --- |
+| `enabled` | `true` | Opt out with `-PteaCoco.enabled=false`; no explicit enable setting is needed. |
+| `mode` | `jacoco` | `mode.set("lines")` selects line-only generic XML. |
+| `testTask` | `test` | `testTask.set("browserTest")` selects another existing `Test` task. |
+| `sourceRoots` | Main source set's Java directories | `sourceRoots.setFrom(file("../library/src/main/java"))` replaces the measured source roots. |
+| `classRoots` | Main output class directories | `classRoots.from(files("../library/build/classes/java/main"))` adds inputs in JaCoCo mode. Arrange for those classes to be built first. |
+| `executionData` | Empty | `executionData.from(layout.buildDirectory.file("jacoco/jvmTest.exec"))` adds compatible raw JaCoCo data. |
+| `dataDirectory` | `build/teacoco/data` | `dataDirectory.set(layout.buildDirectory.dir("coverage-data"))` chooses a dedicated directory that TeaCoCo can clear. |
+| `reportFile` | `build/reports/teacoco/coverage.xml` | `reportFile.set(layout.buildDirectory.file("reports/browser/coverage.xml"))` moves the report and its companion files. |
+| `version` | `0.1.0-SNAPSHOT` | Runtime/reporter version; keep it aligned with the applied TeaCoCo plugin. |
+
+Use `setFrom(...)` to replace a file collection and `from(...)` to add to it.
+Sources and classes must come from the same revision. Each project needs its own
+data directory and report destination. One selected browser task is supported;
+there is no automatic cross-project aggregation.
+
+To run ordinary tests without TeaCoCo, use
+`./gradlew test -PteaCoco.enabled=false`. An explicit `enabled.set(true)` in the
+build overrides that command-line default, so leave it unset if you want the
+command-line opt-out. Disabling coverage does not delete reports from older runs.
+
+### Mixed JVM and Chromium tests with Gradle
+
+Keep the browser setup above, add `jacoco` to its `plugins` block, and separate
+the tests by name: ordinary `*JvmTest` classes and TeaVM `*BrowserTest` classes.
+The following additions run JVM tests first and merge their raw coverage with
+the browser run:
+
+```kotlin
+jacoco {
+    toolVersion = "0.8.15"
+}
+
+val jvmTest = tasks.register<Test>("jvmTest") {
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnit()
+    include("**/*JvmTest.class")
+}
+
+tasks.test {
+    include("**/*BrowserTest.class")
+    dependsOn(jvmTest)
+}
+
+teaCoco {
+    executionData.from(layout.buildDirectory.file("jacoco/jvmTest.exec"))
+}
+```
+
+Run `./gradlew clean teaCocoReport`. Gradle's JaCoCo agent records `jvmTest`
+against original classes; TeaCoCo disables that agent only on the selected
+browser task, `test`. The resulting `coverage.xml` and `.xml.exec` contain the
+union. `executionData` does not schedule its producer task by itself—the
+`dependsOn(jvmTest)` above supplies that ordering. Compatible earlier TeaCoCo raw
+reports can also be inputs; current browser hits are collected automatically.
+
+See the [Gradle guide](docs/gradle.md) for supported versions, local builds and
+further integration details.
 
 ## Alternative line-only mode
 
@@ -222,11 +403,6 @@ semantics and compiler diagnostics in more detail.
 - [Mockatcha timesheet example](mockatcha-example/README.md): complementary tests
   demonstrate **1/6 JVM + 5/6 browser → 6/6 merged branch outcomes**, retaining
   unchanged application JARs.
-- [GWT compatibility pilot](docs/gwt-user-compat-pilot.md): the initial pilot
-  covered **1,764/6,344 lines and 499/2,230 branches** across 67 browser tests,
-  with the same original-bytecode denominator as JVM-only measurement.
-- [Sonar import pilot](docs/sonar-import-pilot.md): imported line/branch counts
-  and combined percentage matched the fixture's expected results.
 
 ## Custom browser harnesses
 

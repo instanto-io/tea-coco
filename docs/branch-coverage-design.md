@@ -1,7 +1,7 @@
 # Branch coverage: JaCoCo reference and TeaCoCo contract
 
-Status: **JaCoCo/browser probe parity and raw-data merging are integrated in the default Maven/Gradle `jacoco` mode. The 67-test GWT pilot passes with unchanged denominators.**
-See [consumer configuration](jacoco-mode.md) and [measured pilot results](gwt-user-compat-pilot.md).
+Status: **JaCoCo/browser probe parity and raw-data merging are integrated in the default Maven/Gradle `jacoco` mode.**
+See [consumer configuration](jacoco-mode.md).
 Recorded 2026-10-25. Reference tools: JaCoCo **0.8.15**, javac **21** with `--release 17`, TeaVM **0.16.0**.
 JaCoCo 0.8.15 matches the version configured in the Instanto parent POM. The live JaCoCo documentation describes
 its current development version, so the experiments and source inspection below pin 0.8.15 explicitly.
@@ -67,7 +67,6 @@ fall-through, colliding-string-switch and exception cases use the existing refer
 
 Outputs under `research/jacoco-teavm-prototype/target/proof/` include ordinary JaCoCo `.exec` and XML files. Therefore
 Sonar can import a merged report through its existing JaCoCo importer; no new Sonar format is needed for this approach.
-The integrated fixture now has a [live Sonar import verification](sonar-import-pilot.md): exact overall counters and the combined calculation match; a new-code baseline test remains separate.
 
 ### Compiler evidence and the execution denominator
 
@@ -214,7 +213,7 @@ maximum counts are not even evidence of a meaningful common branch denominator.
 This behavior was checked in the public scanner storage source and in the locally cached
 `sonar-scanner-engine-community-13.4.1.4007.jar` using `javap -p -c`: coverage-storage lambdas use boolean OR and
 `Math.max`. Its cache content hash is `826dd133d6bf6e9c71c1bf81aed2dcf7743862912a8ac7af2c4e9a60fda16107`.
-The server reported version `26.8.0.126808`. This paragraph records implementation inspection; the later [live import check](sonar-import-pilot.md) verifies the integrated standard JaCoCo XML counters and overall calculation.
+The server reported version `26.8.0.126808`. This paragraph records implementation inspection.
 
 JaCoCo XML and Sonar generic XML contain counts per source line, not the identity of each covered outcome. An exact
 JVM/browser branch union cannot be reconstructed from these XML files alone. We need raw JVM probe evidence,
@@ -223,7 +222,7 @@ also do not expose that mapping; relying on internal analyzer/filter APIs would 
 
 Recommended integration policy:
 
-1. Continue combining JVM and browser **line hits**; do not change the threshold merely to make the pilot green.
+1. Continue combining JVM and browser **line hits** without changing quality-gate thresholds.
 2. For browser branches, first report one explicitly identified compiled branch universe with a single authoritative
    count per line. Do not add counts across builds or assume `(file, line)` identifies a decision.
 3. Where JVM and browser branch domains overlap, implement an identity-aware merge before Sonar export. If identities
@@ -300,19 +299,3 @@ explicit in diagnostics and in the Sonar import policy.
 * Omitted-method/constant-condition tests proving instrumentation does not retain dead application code.
 * A real Sonar import checking line hits, branch totals, new-code metrics and threshold evaluation.
 * Runtime, compilation-time and bundle-size measurements on the first real module before enabling it routinely.
-
-## First real-world exercise (initial selection)
-
-Use `gwt-user-compat`, measured by `gwt-user-compat-tests` in `instanto-io/teavm-compat`. The existing local results
-contain 67 passing tests in 14 TeaVMTestRunner suites using `@SkipJVM`, covering widgets, lifecycle, scheduling,
-browser APIs and generated bindings.
-
-On 2026-10-25, generating a JaCoCo report from that existing execution file against the compiled runtime classes
-reported **0/6,341 lines and 0/2,230 branches** across 326 classes. This is an existing-build baseline, not a newly run
-clean comparison. The TeaCoCo pilot must rerun both measurements from a pinned clean revision and report each tool's
-source scope; the emitted TeaVM denominator may be smaller. Do not replace the repository's existing source-map
-coverage pipeline or alter its Sonar gates merely to run this experiment.
-
-The clean pinned comparison was subsequently completed on 2026-10-26: see
-[the pilot record](gwt-user-compat-pilot.md). Its updated source revision has 6,344 lines;
-the JVM and browser measurements agree exactly on that denominator.
