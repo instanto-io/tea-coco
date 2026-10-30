@@ -39,18 +39,36 @@ jobs:
           mvn --settings central-settings.xml --batch-mode --no-transfer-progress
           sonar:sonar -Dsonar.projectKey=teacoco -Dsonar.projectName=teacoco
           -Dsonar.qualitygate.wait=true
-      - name: Collect SpotBugs SARIF
+      - name: Merge SpotBugs SARIF
         if: always()
         run: |
           rm -rf target/spotbugs-reports
-          mkdir -p target/spotbugs-reports
-          find . -path '*/target/spotbugs/*.sarif' -exec cp {} target/spotbugs-reports/ \;
+          python3 - <<'PY'
+          import json
+          import pathlib
+          runs = []
+          for path in pathlib.Path('.').rglob('*.sarif'):
+              if '/target/spotbugs/' not in path.as_posix():
+                  continue
+              runs.extend(json.loads(path.read_text(encoding='utf-8')).get('runs', []))
+          if not runs:
+              print('No SpotBugs SARIF files found')
+              raise SystemExit(0)
+          output = pathlib.Path('target/spotbugs-reports/spotbugs.sarif')
+          output.parent.mkdir(parents=True, exist_ok=True)
+          output.write_text(json.dumps({
+              'version': '2.1.0',
+              '$schema': 'https://json.schemastore.org/sarif-2.1.0.json',
+              'runs': runs,
+          }, indent=2), encoding='utf-8')
+          print(f'Merged {len(runs)} SpotBugs run(s) into {output}')
+          PY
       - name: Upload SpotBugs SARIF
-        if: always()
+        if: always() && hashFiles('target/spotbugs-reports/spotbugs.sarif') != ''
         continue-on-error: true
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: target/spotbugs-reports
+          sarif_file: target/spotbugs-reports/spotbugs.sarif
           category: spotbugs
       - name: Upload SpotBugs reports
         if: always()
