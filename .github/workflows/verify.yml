@@ -6,6 +6,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  # Required to publish SpotBugs SARIF to code scanning.
+  security-events: write
 concurrency:
   group: teacoco-${{ github.ref }}
   cancel-in-progress: false
@@ -13,6 +15,8 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -24,6 +28,38 @@ jobs:
         run: mvn -B -ntp -s central-settings.xml clean install
       - name: Verify Gradle plugin and consumer integrations
         run: ./gradlew --no-daemon check publishToMavenLocal
+      - name: SonarQube analysis
+        # The Maven reactor carries the Maven plugin; the Gradle plugin is
+        # verified separately but is not part of this analysis.
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && env.SONAR_TOKEN != ''
+        continue-on-error: true
+        env:
+          SONAR_HOST_URL: https://sonar.instanto.io
+        run: >-
+          mvn --settings central-settings.xml --batch-mode --no-transfer-progress
+          sonar:sonar -Dsonar.projectKey=teacoco -Dsonar.projectName=teacoco
+          -Dsonar.qualitygate.wait=true
+      - name: Collect SpotBugs SARIF
+        if: always()
+        run: |
+          rm -rf target/spotbugs-reports
+          mkdir -p target/spotbugs-reports
+          find . -path '*/target/spotbugs/*.sarif' -exec cp {} target/spotbugs-reports/ \;
+      - name: Upload SpotBugs SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: target/spotbugs-reports
+          category: spotbugs
+      - name: Upload SpotBugs reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spotbugs-reports
+          path: '**/target/spotbugs/'
+          if-no-files-found: ignore
+          retention-days: 7
   publish-snapshot:
     needs: verify
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
