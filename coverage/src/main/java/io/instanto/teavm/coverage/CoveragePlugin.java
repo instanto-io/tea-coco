@@ -164,7 +164,9 @@ public final class CoveragePlugin implements TeaVMPlugin {
           }
 
           @Override
-          public void complete() {}
+          public void complete() {
+            // No post-rendering actions required for source location instrumentation.
+          }
         });
   }
 
@@ -210,7 +212,8 @@ public final class CoveragePlugin implements TeaVMPlugin {
   private void instrument(Program program) {
     for (var block : program.getBasicBlocks()) {
       TextLocation previous = null;
-      for (var instruction = block.getFirstInstruction(); instruction != null; ) {
+      var instruction = block.getFirstInstruction();
+      while (instruction != null) {
         var next = instruction.getNext();
         var location = instruction.getLocation();
         if (accepts(location) && !location.equals(previous)) {

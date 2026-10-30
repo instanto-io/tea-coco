@@ -20,6 +20,8 @@ public final class CoverageRuntime {
   public static native void hit(int probe);
 
   /** May also be called explicitly by an application-specific test harness. */
+  @SuppressWarnings(
+      "java:S106") // Standard out is the transport bridge from browser runner to Surefire
   public static void flush() {
     System.out.println("__TEAVM_COVERAGE_V1__:" + snapshot());
   }

@@ -15,8 +15,11 @@ import org.objectweb.asm.*;
 
 /** Lower only JaCoCo 0.8.15's generated constant-dynamic lookup, preserving its probes. */
 final class ProbeAccessAdapter {
+  private static final String JACOCO_INIT = "$jacocoInit";
   private static final String BOOTSTRAP =
       "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)[Z";
+
+  private ProbeAccessAdapter() {}
 
   static byte[] lower(byte[] bytes) {
     ClassReader reader = new ClassReader(bytes);
@@ -27,7 +30,7 @@ final class ProbeAccessAdapter {
           @Override
           public MethodVisitor visitMethod(
               int access, String name, String desc, String signature, String[] exceptions) {
-            if (name.equals("$jacocoInit") && desc.equals(BOOTSTRAP)) {
+            if (name.equals(JACOCO_INIT) && desc.equals(BOOTSTRAP)) {
               if ((access & Opcodes.ACC_SYNTHETIC) == 0)
                 throw new IllegalArgumentException("Non-synthetic JaCoCo bootstrap");
               desc = "()[Z";
@@ -41,14 +44,14 @@ final class ProbeAccessAdapter {
                   if (!c.getDescriptor().equals("Ljava/lang/Object;")
                       || c.getBootstrapMethodArgumentCount() != 0
                       || !bootstrap.getOwner().equals(owner)
-                      || !bootstrap.getName().equals("$jacocoInit")
+                      || !bootstrap.getName().equals(JACOCO_INIT)
                       || !bootstrap.getDesc().equals(BOOTSTRAP)
                       || bootstrap.getTag() != Opcodes.H_INVOKESTATIC) {
                     throw new IllegalArgumentException(
                         "Unsupported JaCoCo constant-dynamic layout");
                   }
                   super.visitMethodInsn(
-                      Opcodes.INVOKESTATIC, owner, "$jacocoInit", "()[Z", bootstrap.isInterface());
+                      Opcodes.INVOKESTATIC, owner, JACOCO_INIT, "()[Z", bootstrap.isInterface());
                 } else {
                   super.visitLdcInsn(value);
                 }

@@ -12,6 +12,7 @@
 package example;
 
 /** Small application fixture with deliberately unexecuted and eliminated code. */
+@SuppressWarnings("java:S3400") // Fixture deliberately returns constants to verify <clinit> and DCE
 public final class Routes {
   private static int calls = initialize();
 
@@ -35,7 +36,7 @@ public final class Routes {
 
   private static boolean uncalledSideEffect() {
     calls += 100; // uncovered short-circuited code
-    return true;
+    return false;
   }
 
   public static int notIncluded() {

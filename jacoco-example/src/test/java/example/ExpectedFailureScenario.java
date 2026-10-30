@@ -20,6 +20,7 @@ import org.teavm.junit.*;
 @RunWith(TeaVMTestRunner.class)
 @OnlyPlatform(TestPlatform.JAVASCRIPT)
 @SkipJVM
+@SuppressWarnings("java:S3577") // Explicit failure fixture, intentionally not matching *Test regex
 public class ExpectedFailureScenario {
   @Test
   public void failsAfterExecutingApplicationCode() {

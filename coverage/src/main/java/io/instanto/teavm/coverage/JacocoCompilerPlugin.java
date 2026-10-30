@@ -11,6 +11,7 @@
  */
 package io.instanto.teavm.coverage;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -24,6 +25,7 @@ import org.teavm.vm.spi.*;
 import tools.jackson.databind.ObjectMapper;
 
 /** Stock runner collection plus read-only compiler evidence for prepared JaCoCo bytecode. */
+@SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
 final class JacocoCompilerPlugin {
   private static final MethodReference FLUSH =
       new MethodReference(JacocoRuntime.class, "flush", String.class, void.class);
@@ -146,7 +148,9 @@ final class JacocoCompilerPlugin {
           }
 
           @Override
-          public void complete() {}
+          public void complete() {
+            // No post-rendering actions required for evidence emission.
+          }
         });
   }
 }

@@ -22,6 +22,7 @@ import org.teavm.junit.TestPlatform;
 @RunWith(TeaVMTestRunner.class)
 @OnlyPlatform(TestPlatform.JAVASCRIPT)
 @SkipJVM
+@SuppressWarnings({"java:S3577", "java:S2699"}) // Explicit failure fixture without assertion
 public class FailureScenario {
   @Test
   public void failsAfterAsyncApplicationWork() throws InterruptedException {

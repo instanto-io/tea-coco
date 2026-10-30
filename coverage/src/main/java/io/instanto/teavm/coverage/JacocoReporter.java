@@ -27,8 +27,8 @@ import tools.jackson.databind.ObjectMapper;
 public final class JacocoReporter {
   public static final String PREFIX = "__TEA_COCO_JACOCO_V1__:";
   private final Map<String, JacocoPreparer.Entry> entries = new HashMap<>();
-  private ExecutionDataStore current;
-  private String run;
+  private ExecutionDataStore current = new ExecutionDataStore();
+  private String run = "";
   private int snapshots;
 
   public static void main(String[] args) throws IOException {
@@ -36,7 +36,8 @@ public final class JacocoReporter {
       throw new IllegalArgumentException(
           "Usage: JacocoReporter dataDirectory outputFile sourceRoots [--exec=coverage.exec]"
               + " reportDirectory...");
-    List<Path> reports = new ArrayList<>(), jvm = new ArrayList<>();
+    List<Path> reports = new ArrayList<>();
+    List<Path> jvm = new ArrayList<>();
     for (String arg : Arrays.copyOfRange(args, 3, args.length)) {
       if (arg.startsWith("--exec=")) jvm.add(Path.of(arg.substring(7)));
       else reports.add(Path.of(arg));
@@ -86,9 +87,12 @@ public final class JacocoReporter {
         for (Path file :
             files
                 .filter(
-                    p ->
-                        p.getFileName().toString().startsWith("TEST-")
-                            && p.toString().endsWith(".xml"))
+                    p -> {
+                      var name = p.getFileName();
+                      return name != null
+                          && name.toString().startsWith("TEST-")
+                          && p.toString().endsWith(".xml");
+                    })
                 .toList()) readJUnit(file);
       }
     }
@@ -116,9 +120,12 @@ public final class JacocoReporter {
       if (cls.getId() != id(entries.get(cls.getName()).id()))
         throw new IOException("Baseline class identity mismatch: " + cls.getName());
     }
-    Files.createDirectories(output.toAbsolutePath().getParent());
-    Path temp =
-        Files.createTempFile(output.toAbsolutePath().getParent(), "teacoco-jacoco-", ".xml");
+    Path parent = output.toAbsolutePath().normalize().getParent();
+    if (parent == null) {
+      throw new IOException("Cannot determine parent directory for " + output);
+    }
+    Files.createDirectories(parent);
+    Path temp = Files.createTempFile(parent, "teacoco-jacoco-", ".xml");
     try {
       try (OutputStream stream = Files.newOutputStream(temp)) {
         var visitor = new XMLFormatter().createVisitor(stream);

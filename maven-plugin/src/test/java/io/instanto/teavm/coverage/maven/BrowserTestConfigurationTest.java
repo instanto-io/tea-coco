@@ -31,7 +31,7 @@ public class BrowserTestConfigurationTest {
   }
 
   @Test
-  public void scopesWiringToTheSelectedProjectLauncherAndExecution() throws Exception {
+  public void scopesWiringToTheSelectedProjectLauncherAndExecution() {
     var request = new org.apache.maven.execution.DefaultMavenExecutionRequest();
     var events = new java.util.concurrent.atomic.AtomicInteger();
     request.setExecutionListener(
@@ -61,12 +61,13 @@ public class BrowserTestConfigurationTest {
     BrowserTestConfiguration.install(
         session,
         project,
-        "failsafe",
-        "browser",
-        "jacoco",
-        java.nio.file.Path.of("target/coverage"),
-        java.util.List.of("src/main/java"),
-        java.util.List.of());
+        new BrowserTestConfiguration.Target(
+            "failsafe",
+            "browser",
+            "jacoco",
+            java.nio.file.Path.of("target/coverage"),
+            java.util.List.of("src/main/java"),
+            java.util.List.of()));
     for (String artifact : java.util.List.of("maven-surefire-plugin", "maven-failsafe-plugin")) {
       for (String id : java.util.List.of("ordinary", "browser")) {
         var plugin = new org.apache.maven.model.Plugin();

@@ -82,9 +82,12 @@ public final class CoverageReporter {
         for (var path :
             files
                 .filter(
-                    p ->
-                        p.getFileName().toString().startsWith("TEST-")
-                            && p.toString().endsWith(".xml"))
+                    p -> {
+                      var name = p.getFileName();
+                      return name != null
+                          && name.toString().startsWith("TEST-")
+                          && p.toString().endsWith(".xml");
+                    })
                 .toList()) {
           readJUnit(path);
         }
@@ -201,9 +204,13 @@ public final class CoverageReporter {
   }
 
   private void write(Path output) throws IOException {
-    output = output.toAbsolutePath();
-    Files.createDirectories(output.getParent());
-    var temp = Files.createTempFile(output.getParent(), "coverage-", ".xml.tmp");
+    output = output.toAbsolutePath().normalize();
+    Path parent = output.getParent();
+    if (parent == null) {
+      throw new IOException("Cannot determine parent directory for " + output);
+    }
+    Files.createDirectories(parent);
+    var temp = Files.createTempFile(parent, "coverage-", ".xml.tmp");
     try {
       try (var writer = Files.newBufferedWriter(temp)) {
         var xml = XMLOutputFactory.newFactory().createXMLStreamWriter(writer);

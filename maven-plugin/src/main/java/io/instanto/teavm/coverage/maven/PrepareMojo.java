@@ -101,12 +101,8 @@ public final class PrepareMojo extends AbstractMojo {
       BrowserTestConfiguration.install(
           session,
           project,
-          testPlugin,
-          testExecutionId,
-          mode,
-          directory,
-          sourceRoots,
-          pluginArtifacts);
+          new BrowserTestConfiguration.Target(
+              testPlugin, testExecutionId, mode, directory, sourceRoots, pluginArtifacts));
       getLog()
           .info(
               "Enabled TeaCoCo "

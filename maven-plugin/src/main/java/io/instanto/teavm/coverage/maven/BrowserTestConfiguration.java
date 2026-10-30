@@ -6,6 +6,7 @@
  */
 package io.instanto.teavm.coverage.maven;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
@@ -20,6 +21,8 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 /** Configures only this project's selected test executions, immediately before Mojo injection. */
 final class BrowserTestConfiguration extends AbstractExecutionListener {
+  private static final ExecutionListener NO_OP = new NoOpExecutionListener();
+
   private final ExecutionListener delegate;
   private final MavenProject project;
   private final String plugin;
@@ -29,39 +32,35 @@ final class BrowserTestConfiguration extends AbstractExecutionListener {
   private final List<String> roots;
   private final List<String> runtime;
 
-  private BrowserTestConfiguration(
-      ExecutionListener delegate,
-      MavenProject project,
+  @SuppressFBWarnings("EI_EXPOSE_REP")
+  public record Target(
       String plugin,
       String executionId,
       String mode,
       Path directory,
       List<String> roots,
-      List<Artifact> artifacts) {
-    this.delegate = delegate == null ? new AbstractExecutionListener() {} : delegate;
+      List<Artifact> artifacts) {}
+
+  private static final class NoOpExecutionListener extends AbstractExecutionListener {}
+
+  private BrowserTestConfiguration(
+      ExecutionListener delegate, MavenProject project, Target target) {
+    this.delegate = delegate == null ? NO_OP : delegate;
     this.project = project;
-    this.plugin = plugin;
-    this.executionId = executionId;
-    this.mode = mode;
-    this.directory = directory;
-    this.roots = List.copyOf(roots);
+    this.plugin = target.plugin();
+    this.executionId = target.executionId();
+    this.mode = target.mode();
+    this.directory = target.directory();
+    this.roots = List.copyOf(target.roots());
     this.runtime =
-        artifacts.stream()
+        target.artifacts().stream()
             .map(Artifact::getFile)
             .filter(Objects::nonNull)
             .map(File::getAbsolutePath)
             .toList();
   }
 
-  static void install(
-      MavenSession session,
-      MavenProject project,
-      String plugin,
-      String executionId,
-      String mode,
-      Path directory,
-      List<String> roots,
-      List<Artifact> artifacts) {
+  static void install(MavenSession session, MavenProject project, Target target) {
     // Reactor workers share the request. Each listener is restricted to its project and
     // delegates all events, preserving Maven's logging and other installed listeners.
     synchronized (session.getRequest()) {
@@ -69,14 +68,7 @@ final class BrowserTestConfiguration extends AbstractExecutionListener {
           .getRequest()
           .setExecutionListener(
               new BrowserTestConfiguration(
-                  session.getRequest().getExecutionListener(),
-                  project,
-                  plugin,
-                  executionId,
-                  mode,
-                  directory,
-                  roots,
-                  artifacts));
+                  session.getRequest().getExecutionListener(), project, target));
     }
   }
 

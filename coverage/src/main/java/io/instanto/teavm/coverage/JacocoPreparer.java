@@ -11,6 +11,7 @@
  */
 package io.instanto.teavm.coverage;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.*;
 import java.nio.file.*;
 import java.security.*;
@@ -27,14 +28,14 @@ public final class JacocoPreparer {
       String name, String id, int probes, String digest, String source, String preparedDigest) {}
 
   /** Fresh preparation identity; browser evidence from a different run must never be merged. */
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public record Manifest(int version, String run, List<Entry> classes) {}
 
+  private static final String TEACOCO_OWNED = ".teacoco-owned";
   private final ObjectMapper json = new ObjectMapper();
   private final Map<String, byte[]> inputs = new TreeMap<>();
   private final List<Entry> entries = new ArrayList<>();
-  private List<Path> roots;
-  private String run;
-  private Path output;
+  private List<Path> roots = List.of();
 
   public static void main(String[] args) throws IOException {
     if (args.length < 3)
@@ -54,9 +55,9 @@ public final class JacocoPreparer {
 
   public Manifest prepare(Path data, List<Path> sourceRoots, List<Path> classRoots)
       throws IOException {
-    output = data.toAbsolutePath().normalize().resolve("jacoco");
+    Path output = data.toAbsolutePath().normalize().resolve("jacoco");
     if (Files.exists(output)) {
-      if (!Files.isRegularFile(output.resolve(".teacoco-owned"))) {
+      if (!Files.isRegularFile(output.resolve(TEACOCO_OWNED))) {
         throw new IOException("Refusing to replace unowned output directory " + output);
       }
       // Even a failed preparation invalidates the previous run. Gradle finalizers or a manual
@@ -97,15 +98,15 @@ public final class JacocoPreparer {
       }
     }
     if (Files.exists(output)) {
-      if (!Files.isRegularFile(output.resolve(".teacoco-owned")))
+      if (!Files.isRegularFile(output.resolve(TEACOCO_OWNED)))
         throw new IOException("Refusing to replace unowned output directory " + output);
       try (var files = Files.walk(output)) {
         for (Path file : files.sorted(Comparator.reverseOrder()).toList()) Files.delete(file);
       }
     }
     Files.createDirectories(output);
-    Files.writeString(output.resolve(".teacoco-owned"), "teacoco JaCoCo preparation\n");
-    run = UUID.randomUUID().toString();
+    Files.writeString(output.resolve(TEACOCO_OWNED), "teacoco JaCoCo preparation\n");
+    String run = UUID.randomUUID().toString();
     for (var input : inputs.entrySet()) {
       String name = input.getKey();
       byte[] bytes = input.getValue();
@@ -170,6 +171,7 @@ public final class JacocoPreparer {
       throw new IOException("Conflicting classpath entries: " + name);
   }
 
+  @SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC_ANON")
   private String source(ClassReader reader) throws IOException {
     String[] file = new String[1];
     reader.accept(
@@ -193,7 +195,10 @@ public final class JacocoPreparer {
 
   private static void write(Path directory, String name, byte[] bytes) throws IOException {
     Path file = directory.resolve(name);
-    Files.createDirectories(file.getParent());
+    Path parent = file.getParent();
+    if (parent != null) {
+      Files.createDirectories(parent);
+    }
     Files.write(file, bytes);
   }
 

@@ -40,6 +40,8 @@ public final class JacocoRuntime {
   }
 
   /** Call after custom harness work completes; stock TeaVMTestRunner is flushed automatically. */
+  @SuppressWarnings(
+      "java:S106") // Standard out is the transport bridge from headless browser to test runner
   public static void flush(String run) {
     StringBuilder result = new StringBuilder("__TEA_COCO_JACOCO_V1__:").append(run).append('|');
     for (int i = 0; i < ids.size(); i++) {

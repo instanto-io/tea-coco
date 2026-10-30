@@ -30,6 +30,7 @@ public class ProbesTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2925") // Simulates async suspension in the browser runtime
   public void complementaryOutcomesAfterAsyncWork() throws InterruptedException {
     Thread.sleep(5);
     assertEquals(2, ProbeCases.choose(false));

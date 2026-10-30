@@ -11,6 +11,7 @@
  */
 package io.instanto.teavm.coverage;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 
 /** Versioned exchange format; independent of compiler classes for use in build tools. */
@@ -19,5 +20,6 @@ public final class CoverageData {
 
   public record Line(String file, int line) {}
 
+  @SuppressFBWarnings("EI_EXPOSE_REP")
   public record Inventory(int version, String id, List<Line> lines, List<Line> notEmitted) {}
 }
